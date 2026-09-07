@@ -1,5 +1,7 @@
 # Closer
 
+[![Deploy](https://github.com/hiuchingpotato/semantle_bp/actions/workflows/deploy.yml/badge.svg)](https://github.com/hiuchingpotato/semantle_bp/actions/workflows/deploy.yml)
+
 A daily word game. You guess words; the game tells you how close each one is in
 *meaning* to a hidden word. Everything runs in the browser.
 
@@ -40,7 +42,13 @@ Then:
 .tooling/venv/bin/python tools/build_data.py   # ~30s, writes web/public/data
 cd web && npm install
 npm run dev                                    # http://127.0.0.1:5183
-npm test                                       # 71 tests
+npm test
+```
+
+And once per clone, so a push that CI would reject is refused locally first:
+
+```bash
+./tools/install-hooks.sh
 ```
 
 ## How it works
@@ -203,6 +211,32 @@ guess results go to a live region (WCAG 1.4.1, 2.1.1).
 analytics, no backend. That is also the cheapest possible answer to UK GDPR and
 PECR for a first release — the moment you add analytics you need a consent
 banner, and the moment you add multiplayer you are processing IP addresses.
+
+## Not breaking the deploy
+
+Three deploys were broken in one afternoon by pushing without checking, and a
+failed deploy is quiet: the code reaches GitHub, the site keeps serving the old
+build, and the feature simply appears not to exist. Three things guard against
+that now.
+
+**A pre-push hook** runs the typecheck and the full suite and refuses the push
+if either fails. Installed with `./tools/install-hooks.sh`; override with
+`git push --no-verify` when you mean it. It runs the whole suite rather than a
+fast subset, because the failures it exists to catch were in the slow
+integration tests.
+
+**The badge above** is red when `main` is failing, so a broken deploy is visible
+rather than something you find out about days later.
+
+**Branch protection**, if enabled — see *Settings → Branches* on the repo. With
+"Require status checks to pass" set to the `build` job, a push that would fail
+CI is rejected outright rather than merged and left broken. The workflow now
+also runs on pull requests so the check exists there; the deploy job is guarded
+so a pull request never publishes.
+
+One habit worth keeping alongside them: never pipe a verification command into
+`grep`. It replaces the command's exit code with grep's, which is exactly how a
+failing test got pushed.
 
 ## Verifying it
 

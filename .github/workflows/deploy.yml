@@ -9,6 +9,10 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # So a pull request gets the same gate, and branch protection has a status
+  # check to require. The deploy job is guarded below and does not run.
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -82,11 +86,15 @@ jobs:
           npm run build
 
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: web/dist
 
   deploy:
     needs: build
+    # Only ever publish from main. A pull request runs the build and the tests
+    # for the status check, but must not put anything on the live site.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
