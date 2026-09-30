@@ -1,0 +1,26 @@
+import type { Slice } from './types'
+import { sliceEmoji } from './slice'
+
+export function shareText(puzzle: number, total: number, slice: Slice, secondsLeft: number, complete: boolean): string {
+  const time = complete ? `⏱ ${secondsLeft}s to spare` : `${slice.filter(Boolean).length}/9 triangles`
+  return `🍕 P for Pizza Daily #${puzzle}\n${total} pts · ${time}\n\n${sliceEmoji(slice)}`
+}
+
+/** Native share sheet on phones, clipboard everywhere else. Returns what happened for the UI. */
+export async function share(text: string): Promise<'shared' | 'copied' | 'cancelled' | 'failed'> {
+  const url = window.location.origin
+  try {
+    if (navigator.share) {
+      await navigator.share({ text: `${text}\n${url}` })
+      return 'shared'
+    }
+    await navigator.clipboard.writeText(`${text}\n${url}`)
+    return 'copied'
+  } catch (err) {
+    return err instanceof DOMException && err.name === 'AbortError' ? 'cancelled' : 'failed'
+  }
+}
+
+export function sliceCode(slice: Slice): string {
+  return slice.map((t) => (t ? t.prompt.difficulty[0] : '-')).join('')
+}

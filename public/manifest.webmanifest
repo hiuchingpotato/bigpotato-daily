@@ -1,0 +1,11 @@
+{
+  "name": "P for Pizza Daily",
+  "short_name": "P for Pizza",
+  "description": "A new P for Pizza puzzle every day.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff4d6",
+  "theme_color": "#e2372b",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
