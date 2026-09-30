@@ -369,6 +369,18 @@ h2 {
 .timer__bar--low {
   background: var(--hard);
 }
+.scorebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.scorebar__count {
+  flex: 1;
+  color: var(--ink-soft);
+}
+
 .timer__text,
 .timer__score {
   position: relative;
@@ -518,7 +530,8 @@ h2 {
 .breakdown {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 8px;
   text-align: center;
 }

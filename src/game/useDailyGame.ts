@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { TIMER_ENABLED } from '../config'
 import { load, save } from '../lib/storage'
 import { generateDeck, VISIBLE_PROMPTS } from './daily'
 import { emptySlice, isComplete, place, ROUND_SECONDS, SKIP_PENALTY_SECONDS, slotFor } from './slice'
@@ -16,6 +17,8 @@ export interface GameState {
   penalty: number
   finished: boolean
   secondsLeftAtFinish: number
+  /** 0 for the day's puzzle; replays get a fresh deal. */
+  round: number
 }
 
 export type SubmitResult =
@@ -24,9 +27,10 @@ export type SubmitResult =
 
 const DIFFICULTY_RANK = { red: 0, yellow: 1, green: 2 } as const
 
-function freshState(dayKey: string): GameState {
+function freshState(dayKey: string, round = 0): GameState {
   return {
     dayKey,
+    round,
     startedAt: null,
     visible: Array.from({ length: VISIBLE_PROMPTS }, (_, i) => i),
     nextCard: VISIBLE_PROMPTS,
@@ -39,6 +43,7 @@ function freshState(dayKey: string): GameState {
 }
 
 function secondsLeft(s: GameState, now: number): number {
+  if (!TIMER_ENABLED) return 0
   if (s.finished) return s.secondsLeftAtFinish
   if (s.startedAt === null) return ROUND_SECONDS
   return Math.max(0, ROUND_SECONDS - (now - s.startedAt) / 1000 - s.penalty)
@@ -66,16 +71,17 @@ function drawInto(s: GameState, pos: number, deckLength: number): Pick<GameState
 }
 
 export function useDailyGame(dayKey: string) {
-  const deck = useMemo(() => generateDeck(dayKey), [dayKey])
   const storageKey = `pfp:game:${dayKey}`
-  const [state, setState] = useState<GameState>(() => load(storageKey, freshState(dayKey)))
+  const [state, setState] = useState<GameState>(() => ({ ...freshState(dayKey), ...load<Partial<GameState>>(storageKey, {}) }))
+  const round = state.round
+  const deck = useMemo(() => generateDeck(round ? `${dayKey}~${round}` : dayKey), [dayKey, round])
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => save(storageKey, state), [storageKey, state])
 
   // The clock keeps running from `startedAt`, so reloading the page doesn't pause it.
   useEffect(() => {
-    if (state.startedAt === null || state.finished) return
+    if (!TIMER_ENABLED || state.startedAt === null || state.finished) return
     const id = setInterval(() => {
       const t = Date.now()
       setNow(t)
@@ -134,13 +140,19 @@ export function useDailyGame(dayKey: string) {
     (pos: number) => {
       setState((s) => {
         if (s.finished || s.startedAt === null || s.visible[pos] < 0) return s
-        return settle({ ...s, ...drawInto(s, pos, deck.length), penalty: s.penalty + SKIP_PENALTY_SECONDS }, deck, Date.now())
+        return settle({ ...s, ...drawInto(s, pos, deck.length), penalty: s.penalty + (TIMER_ENABLED ? SKIP_PENALTY_SECONDS : 0) }, deck, Date.now())
       })
     },
     [deck],
   )
 
+  /** Ends the game now with whatever is in the slice. */
+  const end = useCallback(() => setState((s) => (s.finished || s.startedAt === null ? s : finish(s, Date.now()))), [])
+
+  /** Starts a new game straight away with a fresh deal. */
+  const playAgain = useCallback(() => setState((s) => ({ ...freshState(dayKey, s.round + 1), startedAt: Date.now() })), [dayKey])
+
   const visiblePrompts = state.visible.map((i) => (i >= 0 ? deck[i] : null))
 
-  return { state, deck, visiblePrompts, timeLeft, start, submit, skip }
+  return { state, deck, visiblePrompts, timeLeft, start, submit, skip, end, playAgain }
 }

@@ -1,8 +1,9 @@
+import { TIMER_ENABLED } from '../config'
 import type { Slice } from './types'
 import { sliceEmoji } from './slice'
 
 export function shareText(puzzle: number, total: number, slice: Slice, secondsLeft: number, complete: boolean): string {
-  const time = complete ? `⏱ ${secondsLeft}s to spare` : `${slice.filter(Boolean).length}/9 triangles`
+  const time = complete && TIMER_ENABLED ? `⏱ ${secondsLeft}s to spare` : `${slice.filter(Boolean).length}/9 triangles`
   return `🍕 P for Pizza Daily #${puzzle}\n${total} pts · ${time}\n\n${sliceEmoji(slice)}`
 }
 

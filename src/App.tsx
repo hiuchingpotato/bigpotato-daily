@@ -6,6 +6,7 @@ import { PromptCard } from './components/PromptCard'
 import { puzzleNumber, todayKey } from './game/daily'
 import { share, shareText, sliceCode } from './game/share'
 import { isComplete, POINTS, ROUND_SECONDS, score, SKIP_PENALTY_SECONDS, slotFor } from './game/slice'
+import { TIMER_ENABLED, UNLIMITED_PLAYS } from './config'
 import { useDailyGame } from './game/useDailyGame'
 import { leaderboard } from './lib/leaderboard'
 import { getPlayer, getStats, recordResult, setPlayerName, type Player } from './lib/storage'
@@ -74,14 +75,25 @@ function Intro({ player, onName, onStart }: { player: Player; onName: (n: string
           Type anything that fits — <i>Animals + B</i> → <i>Badger</i>. It counts for whichever card it matches.
         </li>
         <li>
-          Win the card and it goes into your slice. You’ve got <b>{Math.floor(ROUND_SECONDS / 60)}:{String(ROUND_SECONDS % 60).padStart(2, '0')}</b> to fill all nine.
+          Win the card and it goes into your slice.{' '}
+          {TIMER_ENABLED ? (
+            <>
+              You’ve got <b>{Math.floor(ROUND_SECONDS / 60)}:{String(ROUND_SECONDS % 60).padStart(2, '0')}</b> to fill all nine.
+            </>
+          ) : (
+            <>Fill all nine to finish.</>
+          )}
         </li>
       </ol>
       <div className="legend">
         <div><span className="chip chip--green" /> Easy <b>+{POINTS.green}</b> · bottom row only</div>
         <div><span className="chip chip--yellow" /> Medium <b>+{POINTS.yellow}</b> · bottom or middle</div>
         <div><span className="chip chip--red" /> Hard <b>+{POINTS.red}</b> · anywhere, and the only way to top it off</div>
-        <div className="legend__note">Finish the slice for a bonus plus a point for every second left. Skipping costs {SKIP_PENALTY_SECONDS}s.</div>
+        <div className="legend__note">
+          {TIMER_ENABLED
+            ? `Finish the slice for a bonus plus a point for every second left. Skipping costs ${SKIP_PENALTY_SECONDS}s.`
+            : 'Finish the slice for a bonus. Skipping a card is free.'}
+        </div>
       </div>
       <label className="field">
         <span>Your name on the leaderboard</span>
@@ -102,7 +114,7 @@ function Intro({ player, onName, onStart }: { player: Player; onName: (n: string
           onStart()
         }}
       >
-        Start the clock
+        {TIMER_ENABLED ? 'Start the clock' : 'Start'}
       </button>
       {stats.played > 0 ? (
         <p className="muted">
@@ -116,7 +128,7 @@ function Intro({ player, onName, onStart }: { player: Player; onName: (n: string
 type Feedback = { kind: 'ok' | 'bad'; text: string; id: number } | null
 
 function Play({ game }: { game: Game }) {
-  const { state, visiblePrompts, timeLeft, submit, skip } = game
+  const { state, visiblePrompts, timeLeft, submit, skip, end } = game
   const [value, setValue] = useState('')
   const [feedback, setFeedback] = useState<Feedback>(null)
   const [freshSlot, setFreshSlot] = useState<number | undefined>()
@@ -149,13 +161,23 @@ function Play({ game }: { game: Game }) {
 
   return (
     <main className="screen play">
-      <div className="timer" role="timer" aria-label={`${secs} seconds left`}>
-        <div className={`timer__bar ${timeLeft < 20 ? 'timer__bar--low' : ''}`} style={{ width: `${pct}%` }} />
-        <span className="timer__text">
-          {Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}
-        </span>
-        <span className="timer__score">{current.triangles} pts</span>
-      </div>
+      {TIMER_ENABLED ? (
+        <div className="timer" role="timer" aria-label={`${secs} seconds left`}>
+          <div className={`timer__bar ${timeLeft < 20 ? 'timer__bar--low' : ''}`} style={{ width: `${pct}%` }} />
+          <span className="timer__text">
+            {Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}
+          </span>
+          <span className="timer__score">{current.triangles} pts</span>
+        </div>
+      ) : (
+        <div className="scorebar">
+          <span>{current.triangles} pts</span>
+          <span className="scorebar__count">{state.slice.filter(Boolean).length}/9</span>
+          <button type="button" className="icon-btn" onClick={end}>
+            Finish
+          </button>
+        </div>
+      )}
 
       <PizzaSlice slice={state.slice} fresh={freshSlot} className="play__slice" />
 
@@ -209,7 +231,8 @@ function Done({ game, dayKey, puzzle, player, onName }: { game: Game; dayKey: st
   const [stats] = useState(() => recordResult(dayKey, final.total, yesterdayKey(dayKey)))
 
   const submitScore = async (n: string) => {
-    if (!n.trim()) return
+    // Replays are for practice; only the day's first game goes on the leaderboard.
+    if (!n.trim() || state.round > 0) return
     await leaderboard
       .submit({
         day: dayKey,
@@ -235,7 +258,7 @@ function Done({ game, dayKey, puzzle, player, onName }: { game: Game; dayKey: st
 
   return (
     <main className="screen done">
-      <h1>{complete ? 'Slice complete!' : 'Time’s up!'}</h1>
+      <h1>{complete ? 'Slice complete!' : TIMER_ENABLED ? 'Time’s up!' : 'Game over'}</h1>
       <PizzaSlice slice={state.slice} className="done__slice" />
       <div className="total">
         <div className="total__num">{final.total}</div>
@@ -244,7 +267,7 @@ function Done({ game, dayKey, puzzle, player, onName }: { game: Game; dayKey: st
       <dl className="breakdown">
         <div><dt>Triangles</dt><dd>{final.triangles}</dd></div>
         <div><dt>Full slice bonus</dt><dd>{final.completion}</dd></div>
-        <div><dt>Time bonus</dt><dd>{final.time}</dd></div>
+        {TIMER_ENABLED ? <div><dt>Time bonus</dt><dd>{final.time}</dd></div> : null}
       </dl>
 
       <button
@@ -257,9 +280,14 @@ function Done({ game, dayKey, puzzle, player, onName }: { game: Game; dayKey: st
       >
         Share your slice
       </button>
+      {UNLIMITED_PLAYS ? (
+        <button type="button" className="btn" onClick={game.playAgain}>
+          Play again with new cards
+        </button>
+      ) : null}
       {shareMsg ? <p className="muted">{shareMsg}</p> : null}
 
-      {!submitted ? (
+      {!submitted && state.round === 0 ? (
         <form
           className="field field--inline"
           onSubmit={(e) => {
