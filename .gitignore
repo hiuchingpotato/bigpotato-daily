@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.env
+.env.local
+.env.*.local
+
+# Closer: local toolchain and the GloVe download (862MB zip, 1GB extracted)
+.tooling/
+preview/
+
+# Closer spoilers: the answer for every puzzle, written for tests only.
+# This must never be committed or served.
+tools/closer/answers.debug.json
+
+# Closer's generated game data. Large and reproducible from tools/closer/build_data.py.
+public/closer/data/
+
+# Local Claude Code permissions, specific to this machine
+.claude/settings.local.json

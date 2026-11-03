@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+#
+# Refuse to push code that CI will reject.
+#
+# Installed by tools/install-hooks.sh. Three deploys were broken by pushing
+# without checking, so this runs the same gate CI does: typecheck, then the full
+# test suite. It is deliberately the *whole* suite rather than a fast subset -
+# the failures it exists to catch were in the slow integration tests.
+#
+# Skip with --no-verify when you know what you are doing, or set SKIP_TESTS=1.
+
+set -uo pipefail
+
+if [ "${SKIP_TESTS:-}" = "1" ]; then
+  echo "pre-push: skipped (SKIP_TESTS=1)"
+  exit 0
+fi
+
+repo="$(git rev-parse --show-toplevel)"
+web="$repo"
+
+if [ ! -d "$web/node_modules" ]; then
+  echo "pre-push: node_modules missing, skipping. Run 'npm install'."
+  exit 0
+fi
+
+# The local Node install, so the hook works from a GUI client with a bare PATH.
+if [ -d "$repo/.tooling/node/bin" ]; then
+  PATH="$repo/.tooling/node/bin:$PATH"
+  export PATH
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-push: no node on PATH, skipping."
+  exit 0
+fi
+
+cd "$web" || exit 0
+
+echo "pre-push: typecheck..."
+if ! npx tsc --noEmit; then
+  echo
+  echo "pre-push: TYPECHECK FAILED - push refused."
+  echo "          Fix it, or use 'git push --no-verify' to override."
+  exit 1
+fi
+
+echo "pre-push: tests..."
+# Output is captured so a summary can be shown on failure without the noise of
+# a full passing run.
+if ! npm test >/tmp/bigpotato-daily-prepush.log 2>&1; then
+  echo
+  echo "pre-push: TESTS FAILED - push refused."
+  grep -E "×|→|FAIL|Tests " /tmp/bigpotato-daily-prepush.log | head -20
+  echo
+  echo "          Full output: /tmp/bigpotato-daily-prepush.log"
+  echo "          Override with 'git push --no-verify' if you are sure."
+  exit 1
+fi
+
+grep -E "Tests " /tmp/bigpotato-daily-prepush.log | sed 's/^/pre-push: /'
+rm -f /tmp/bigpotato-daily-prepush.log
+echo "pre-push: ok"

@@ -1,0 +1,1356 @@
+/*
+ * Closer - visual system.
+ *
+ * The board is the page: it fills the viewport and everything else floats over
+ * it in a translucent rail. Dark by default because the word field is drawn as
+ * light-on-dark and a light theme would mean re-tuning the renderer's additive
+ * blending, which is a deliberate later job rather than an oversight.
+ *
+ * Tone values are mirrored in plot/renderer.ts (TONES) - canvas cannot read CSS
+ * custom properties. Change both.
+ *
+ * Scoped so it only applies while this game is on screen: page-level rules match
+ * through :has(.game-closer) and the rest is nested under the game's wrapper element.
+ */
+
+:root:has(.game-closer) {
+  --ink: #0b1020;
+  --ink-raised: rgba(19, 26, 46, 0.82);
+  --ink-line: rgba(146, 170, 214, 0.16);
+  --text: #e8eefb;
+  --text-dim: #9fb0d0;
+  --text-faint: #74849f;
+  --accent: #7aa2d6;
+
+  /* Red for the win. Bright enough to hold against the dark board, and clear
+     of --tone-blazing so the answer never reads as merely a very good guess. */
+  --tone-solved: #ff4d4d;
+  --tone-blazing: #ff8a60;
+  --tone-scorching: #ffa35c;
+  --tone-burning: #ffbe60;
+  --tone-hot: #f6d66e;
+  --tone-warm: #bedc8c;
+  --tone-mild: #88d0b2;
+  --tone-cool: #74bad6;
+  --tone-cold: #6e98cd;
+  --tone-distant: #7482a8;
+
+  --radius: 10px;
+  --rail-width: 26rem;
+
+  color-scheme: dark;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
+  font-synthesis-weight: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* The board is the page, so everything down to the wrapper fills the viewport. */
+:root:has(.game-closer),
+:root:has(.game-closer) body,
+:root:has(.game-closer) #root,
+.game-closer {
+  height: 100%;
+}
+
+body:has(.game-closer) {
+  background: var(--ink);
+  color: var(--text);
+  overflow: hidden;
+  overscroll-behavior: none;
+  /* Panning and scrolling still work; pinch-zoom and double-tap-zoom of the
+     page do not. The board opts out again with touch-action: none, because it
+     handles its own gestures. */
+  touch-action: pan-x pan-y;
+}
+
+@media (max-width: 900px) {
+  :root:has(.game-closer) {
+    --rail-width: 100%;
+  }
+}
+
+.game-closer {
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------- boot */
+
+.boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 2rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.boot-pulse {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 2px solid var(--ink-line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 900ms linear infinite;
+}
+
+.boot-error h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+
+.boot-error code {
+  font-size: 0.85em;
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-pulse {
+    animation-duration: 3s;
+  }
+}
+
+/* --------------------------------------------------------------- layout */
+
+.app {
+  /* Fixed, not relative: the interface is anchored to the viewport, so nothing
+     drifts if the page is ever scrolled or zoomed by other means. */
+  position: fixed;
+  inset: 0;
+  /* Sits under any notch or home indicator on a phone. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.orbit {
+  position: absolute;
+  inset: 0;
+}
+
+.orbit-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    #121a30 0%,
+    var(--ink) 62%,
+    #070a15 100%
+  );
+  cursor: grab;
+  touch-action: none;
+}
+
+.orbit-canvas:active {
+  cursor: grabbing;
+}
+
+.orbit-controls {
+  position: absolute;
+  /* Not `manipulation`: that re-permits pinch-zoom on the element. */
+  touch-action: pan-x pan-y;
+  left: 1rem;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  background: var(--ink-raised);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius);
+}
+
+.orbit-controls button {
+  min-width: 2rem;
+  padding: 0.3rem 0.55rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.orbit-controls button:hover {
+  color: var(--text);
+  background: rgba(146, 170, 214, 0.12);
+}
+
+.orbit-zoom {
+  padding-right: 0.35rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.app-header {
+  position: absolute;
+  touch-action: pan-x pan-y;
+  top: 1rem;
+  left: 1rem;
+  pointer-events: none;
+}
+
+.home-link {
+  margin-right: -0.15rem;
+  padding: 0 0.2rem;
+  color: var(--text-dim);
+  font-weight: 400;
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+.home-link:hover {
+  color: var(--text);
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.puzzle-number {
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.archive-flag {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  pointer-events: auto;
+}
+
+.archive-flag a {
+  color: var(--accent);
+}
+
+/* ----------------------------------------------------------------- rail */
+
+.rail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--rail-width);
+  max-width: 100%;
+  background: linear-gradient(
+    to left,
+    rgba(9, 13, 26, 0.94) 60%,
+    rgba(9, 13, 26, 0.72) 100%
+  );
+  backdrop-filter: blur(14px);
+  border-left: 1px solid var(--ink-line);
+}
+
+.rail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Scrolls, but a pinch here must not zoom the page. */
+  touch-action: pan-y;
+  padding: 1rem 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  scrollbar-width: thin;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 0.75rem 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* ----------------------------------------------------------- guess list */
+
+.guess-list-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  background: rgba(146, 170, 214, 0.1);
+  border-radius: 7px;
+}
+
+.segmented button {
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.segmented button.is-active {
+  color: var(--text);
+  background: rgba(146, 170, 214, 0.18);
+}
+
+.guess-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.guess-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guess-row {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) 3.1rem 2.6rem 5.4rem;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  background: rgba(146, 170, 214, 0.05);
+  border-left: 3px solid var(--row-tone, var(--tone-distant));
+  border-radius: 5px;
+}
+
+.guess-row.is-focus {
+  background: rgba(146, 170, 214, 0.15);
+  box-shadow: inset 0 0 0 1px var(--ink-line);
+}
+
+.guess-turn {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  text-align: right;
+}
+
+.guess-word {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.guess-tag {
+  padding: 0.05rem 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--text-faint);
+  border-radius: 3px;
+}
+
+.guess-similarity,
+.guess-rank {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.guess-rank {
+  color: var(--text-faint);
+}
+
+.guess-band {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-self: end;
+}
+
+.guess-band-label {
+  font-size: 0.72rem;
+  color: var(--row-tone, var(--text-dim));
+}
+
+.guess-pips {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.pip {
+  width: 3px;
+  height: 10px;
+  background: rgba(146, 170, 214, 0.18);
+  border-radius: 1px;
+}
+
+.pip.is-on {
+  background: var(--row-tone, var(--tone-distant));
+}
+
+.guess-row.is-revealed .guess-word {
+  font-style: italic;
+}
+
+.tone-solved {
+  --row-tone: var(--tone-solved);
+}
+
+.tone-blazing {
+  --row-tone: var(--tone-blazing);
+}
+
+.tone-scorching {
+  --row-tone: var(--tone-scorching);
+}
+
+.tone-burning {
+  --row-tone: var(--tone-burning);
+}
+
+.tone-hot {
+  --row-tone: var(--tone-hot);
+}
+
+.tone-warm {
+  --row-tone: var(--tone-warm);
+}
+
+.tone-mild {
+  --row-tone: var(--tone-mild);
+}
+
+.tone-cool {
+  --row-tone: var(--tone-cool);
+}
+
+.tone-cold {
+  --row-tone: var(--tone-cold);
+}
+
+.tone-distant {
+  --row-tone: var(--tone-distant);
+}
+
+/* ----------------------------------------------------------- guess form */
+
+.guess-form {
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--ink-line);
+  background: rgba(7, 10, 21, 0.65);
+}
+
+.guess-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.guess-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  /* 16px stops iOS Safari zooming the viewport on focus. */
+  font-size: 16px;
+  color: var(--text);
+  background: rgba(146, 170, 214, 0.09);
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+}
+
+.guess-input::placeholder {
+  color: var(--text-faint);
+}
+
+.guess-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(122, 162, 214, 0.25);
+}
+
+.button-primary {
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.button-primary:hover:not(:disabled) {
+  background: #93b6e2;
+}
+
+.button-ghost {
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--ink-line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.button-ghost:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(146, 170, 214, 0.35);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.guess-form-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.hint-status {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+.notice {
+  min-height: 1.1rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--tone-burning);
+}
+
+.notice:not(.is-visible) {
+  visibility: hidden;
+}
+
+/* --------------------------------------------------------------- panels */
+
+.panel {
+  padding: 0.85rem;
+  background: rgba(146, 170, 214, 0.05);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius);
+}
+
+.panel h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.panel-solved {
+  border-color: rgba(255, 77, 77, 0.35);
+  background: rgba(255, 77, 77, 0.08);
+}
+
+.solved-word {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--tone-solved);
+}
+
+.solved-summary {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.solved-spark {
+  margin: 0.4rem 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--tone-warm);
+}
+
+.solved-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.countdown {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.countdown time {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.panel-about summary,
+.archive-toggle {
+  cursor: pointer;
+}
+
+.panel-about summary {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  list-style: none;
+}
+
+.panel-about summary::after {
+  content: " +";
+}
+
+.panel-about details[open] summary::after {
+  content: " \2212";
+}
+
+.panel-about h3 {
+  margin: 1rem 0 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.panel-about p {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.fineprint {
+  font-size: 0.74rem !important;
+  color: var(--text-faint) !important;
+}
+
+.panel-archive {
+  padding: 0.6rem 0.85rem;
+}
+
+.archive-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.archive-chip {
+  display: grid;
+  place-items: center;
+  min-width: 2.1rem;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  text-decoration: none;
+  background: rgba(146, 170, 214, 0.08);
+  border: 1px solid transparent;
+  border-radius: 5px;
+}
+
+.archive-chip:hover {
+  color: var(--text);
+  border-color: var(--ink-line);
+}
+
+.archive-chip.is-solved {
+  color: var(--tone-warm);
+  background: rgba(190, 220, 140, 0.12);
+}
+
+.archive-chip.is-active {
+  border-color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .rail {
+    top: auto;
+    /* Board keeps the top half; the rail becomes a sheet under it. */
+    height: 58%;
+    border-left: 0;
+    border-top: 1px solid var(--ink-line);
+  }
+
+  .orbit {
+    bottom: 58%;
+  }
+
+  .orbit-controls {
+    bottom: calc(58% + 0.75rem);
+  }
+
+  .guess-row {
+    grid-template-columns: minmax(0, 1fr) 3rem 2.4rem 4.6rem;
+  }
+
+  .guess-turn {
+    display: none;
+  }
+
+  .guess-band-label {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------- the answer row */
+
+/* The word that won is deliberately louder than the words that missed:
+   larger type and more weight, so it reads as a result rather than a row. */
+
+.guess-row.is-answer {
+  padding: 0.6rem 0.5rem;
+  background: rgba(255, 77, 77, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 77, 77, 0.32);
+}
+
+.guess-row.is-answer .guess-word {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--tone-solved);
+}
+
+/* ---------------------------------------------------------------- modal */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(5, 8, 17, 0.72);
+  backdrop-filter: blur(6px);
+  animation: fade-in 160ms ease-out;
+}
+
+.modal {
+  position: relative;
+  width: min(26rem, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.75rem 1.5rem 1.25rem;
+  text-align: center;
+  background: #121a2e;
+  border: 1px solid rgba(255, 77, 77, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  animation: rise-in 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* An unexpected pop is disorienting for some players, and the animation is
+   decoration - the dialog works identically without it. */
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal {
+    animation: none;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--text-faint);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: var(--text);
+  background: rgba(146, 170, 214, 0.12);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--tone-solved);
+}
+
+.modal-lede {
+  margin: 0.9rem 0 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.modal-word {
+  margin: 0.1rem 0 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+
+.modal-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 1.25rem 0 0;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--ink-line);
+  border-bottom: 1px solid var(--ink-line);
+}
+
+.modal-stats div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.15rem;
+}
+
+.modal-stats dt {
+  font-size: 0.68rem;
+  line-height: 1.25;
+  color: var(--text-faint);
+}
+
+.modal-stats dd {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.modal-result {
+  margin: 0.85rem 0 0;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+
+.modal-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+}
+
+.modal-actions .button-primary,
+.modal-actions .button-ghost {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  font-size: 0.9rem;
+}
+
+.modal-share-note {
+  min-height: 1.6rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--text-faint);
+}
+
+/* ------------------------------------------------ statistics-only dialog */
+
+.modal-stats-only {
+  width: min(21rem, 100%);
+  border-color: var(--ink-line);
+  background: #121a2e;
+}
+
+/* No word to celebrate here, so the heading is not gold. */
+
+.modal-title-plain {
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.modal-stats-only .modal-stats {
+  margin-top: 1rem;
+}
+
+.modal-stats-only .modal-note {
+  margin-top: 0.85rem;
+  line-height: 1.45;
+}
+
+.solved-share-note {
+  min-height: 1rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  color: var(--tone-warm);
+}
+
+.solved-actions .button-primary,
+.solved-actions .button-ghost {
+  flex: 1;
+}
+
+.panel-solved .countdown {
+  display: block;
+  margin: 0.5rem 0 0;
+}
+
+/* ------------------------------------------------------------- calendar */
+
+.panel-calendar {
+  padding: 0.85rem 0.75rem;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.calendar-head h2 {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-dim);
+}
+
+.calendar-nav {
+  width: 1.75rem;
+  height: 1.75rem;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--ink-line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.calendar-nav:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(146, 170, 214, 0.35);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.calendar-weekday {
+  padding-bottom: 0.2rem;
+  font-size: 0.62rem;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.calendar-pad {
+  aspect-ratio: 1;
+}
+
+.calendar-day {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  text-decoration: none;
+  background: rgba(146, 170, 214, 0.07);
+  border: 1px solid transparent;
+  border-radius: 5px;
+}
+
+.calendar-day:hover {
+  color: var(--text);
+  border-color: var(--ink-line);
+}
+
+/* Playable but untouched. */
+
+.calendar-day.is-unplayed {
+  color: var(--text-dim);
+}
+
+.calendar-day.is-started {
+  color: var(--tone-hot);
+  background: rgba(246, 214, 110, 0.14);
+}
+
+/* Solved on the day - the only kind that builds a streak. */
+
+.calendar-day.is-solved {
+  font-weight: 650;
+  color: #0b1020;
+  background: var(--tone-warm);
+}
+
+/* Caught up later. Marked, but visibly not the same thing. */
+
+.calendar-day.is-replayed {
+  color: var(--tone-mild);
+  background: rgba(136, 208, 178, 0.16);
+  border-color: rgba(136, 208, 178, 0.35);
+}
+
+/* Given up: marked, but plainly not a win. */
+
+.calendar-day.is-gaveup {
+  color: var(--text-faint);
+  background: rgba(146, 170, 214, 0.06);
+  border-color: rgba(146, 170, 214, 0.25);
+}
+
+.calendar-day.is-locked {
+  color: rgba(116, 130, 168, 0.4);
+  background: transparent;
+  cursor: default;
+}
+
+.calendar-day.is-today {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.calendar-day.is-active {
+  border-color: var(--accent);
+}
+
+.calendar-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  font-size: 0.66rem;
+  list-style: none;
+  color: var(--text-faint);
+}
+
+.calendar-key li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.key-swatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 3px;
+}
+
+.key-swatch.is-solved {
+  background: var(--tone-warm);
+}
+
+.key-swatch.is-replayed {
+  background: rgba(136, 208, 178, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(136, 208, 178, 0.6);
+}
+
+.key-swatch.is-started {
+  background: rgba(246, 214, 110, 0.45);
+}
+
+.calendar-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+/* The guess form now sits in the scroll flow under the words played, rather
+   than pinned to the bottom of the rail. */
+
+.rail-scroll .guess-form {
+  padding: 0.75rem 0;
+  background: transparent;
+  border-top: 0;
+}
+
+/* ------------------------------------------------------- panel toggles */
+
+/* Shared by the calendar and About, so a collapsed section always looks the
+   same wherever it appears in the rail. */
+
+.panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.panel-toggle:hover {
+  color: var(--text-dim);
+}
+
+.panel-toggle-mark {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.calendar-collapsed {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.panel-calendar #calendar-body {
+  margin-top: 0.75rem;
+}
+
+/* `hidden` loses to the display value the grid sets, so state it plainly. */
+
+.panel-calendar [hidden] {
+  display: none;
+}
+
+.panel-stats-button {
+  padding: 0.85rem 0.75rem;
+}
+
+/* Secondary text on a collapsed row - the streak beside Statistics, the month
+   beside Calendar. */
+
+.panel-peek {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------- help button */
+
+/* Square, under the title. The header is pointer-events:none so it does not
+   block dragging the board, so the button has to opt back in. */
+
+.help-button {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: 0.5rem;
+  padding: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1;
+  color: var(--text-dim);
+  background: var(--ink-raised);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--ink-line);
+  border-radius: 7px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.help-button:hover {
+  color: var(--text);
+  border-color: rgba(146, 170, 214, 0.4);
+}
+
+/* The About dialog is long-form reading, so it gets more width than the
+   result dialogs and its own scroll. */
+
+.modal-about {
+  width: min(32rem, 100%);
+  max-height: 85vh;
+  text-align: left;
+}
+
+.modal-about .modal-title {
+  text-align: left;
+}
+
+.modal-about h3 {
+  margin: 1.15rem 0 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.modal-about p {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.modal-about .modal-actions {
+  margin-top: 1.25rem;
+}
+
+/* ------------------------------------- input and list as a single block */
+
+/*
+ * The guess input sits directly above the list, so the two should read as one
+ * unit. Three things were pushing them apart: the form's own bottom padding,
+ * the rail's flex gap between children, and the error line reserving a row of
+ * space even with nothing to say. All three are removed here, leaving the same
+ * 2px that separates one guess row from the next.
+ */
+
+.rail-scroll .guess-form {
+  padding: 0.75rem 0 0;
+}
+
+/* Flex gap cannot be subtracted, so it is cancelled and replaced. */
+
+.rail-scroll .guess-form + .guess-list {
+  margin-top: calc(2px - 0.75rem);
+}
+
+/*
+ * Collapse the notice when empty rather than holding its line open. That costs
+ * a small downward shift when a message does appear, which is a fair trade for
+ * closing a permanent band of empty space above the closest match.
+ */
+
+.notice:not(.is-visible) {
+  min-height: 0;
+  margin-top: 0;
+}
+
+/* The flame on the solved row. Sits after the word, sized to the larger type
+   that row already uses. */
+
+.guess-flame {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Give up sits at the far end of the hint row, pushed away from the buttons
+   that help. */
+
+.button-giveup {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.button-danger {
+  padding: 0.65rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #fff;
+  background: var(--tone-solved);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.button-danger:hover:not(:disabled) {
+  background: #ff6a6a;
+}
+
+.modal-confirm {
+  width: min(23rem, 100%);
+  border-color: var(--ink-line);
+}
+
+.modal-confirm-body {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/* A forfeited puzzle is recorded, but it does not get the winner's colour. */
+
+.panel-solved.is-gaveup {
+  border-color: var(--ink-line);
+  background: rgba(146, 170, 214, 0.05);
+}
+
+.panel-solved.is-gaveup .solved-word {
+  color: var(--text-dim);
+}
+
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
