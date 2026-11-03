@@ -50,6 +50,7 @@ With no Supabase config, the leaderboard only saves scores in the current browse
 1. Create a Supabase project.
 2. Run `supabase/migrations/001_scores.sql` in the SQL editor.
 3. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+4. For the live site, add the same two values as GitHub Actions secrets (`gh secret set VITE_SUPABASE_URL`, `gh secret set VITE_SUPABASE_ANON_KEY`) and re-run the deploy.
 
 ## Project layout
 

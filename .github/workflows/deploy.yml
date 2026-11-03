@@ -79,6 +79,11 @@ jobs:
         env:
           # Project sites are served from /<repo>/, not the domain root.
           PAGES_BASE: /bigpotato-daily/
+          # P for Pizza's global leaderboard. Both are public by design (they ship in the
+          # bundle; row-level security does the protecting). Unset, the build falls back
+          # to a this-device-only leaderboard.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
           npm ci
           npm test
