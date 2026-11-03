@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Closer — UI test page</title>
+
+    <!--
+      Opens straight from the filesystem: double-click it, no server, no build.
+
+      The stylesheet is the real one. Browsers block fetch() over file:// but not
+      <link>, so this page shows exactly the styles the app ships, and any change
+      to styles.css shows up here on reload.
+
+      The markup, though, is a hand-written copy of what the React components
+      render. It can drift. Treat this as a place to judge type sizes, spacing
+      and colour - not as proof the components behave correctly. For that, run
+      the real app (see README) or `npm test`.
+    -->
+    <link rel="stylesheet" href="./src/styles.css" />
+
+    <style>
+      /* Page furniture, not part of the app. */
+      body {
+        overflow: auto;
+        padding: 1.5rem;
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+      .harness {
+        max-width: 30rem;
+        margin: 0 auto 2rem;
+      }
+      .harness h1 {
+        font-size: 1.1rem;
+        font-weight: 650;
+      }
+      .harness h2 {
+        margin: 1.75rem 0 0.5rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-faint);
+      }
+      .harness p {
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: var(--text-dim);
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0;
+      }
+      .rail-mock {
+        padding: 1rem;
+        background: rgba(9, 13, 26, 0.6);
+        border: 1px solid var(--ink-line);
+        border-radius: 10px;
+      }
+      .marker-grid {
+        display: grid;
+        grid-template-columns: 4.5rem repeat(8, 1fr);
+        gap: 0.5rem;
+        align-items: end;
+        padding: 1rem 0.75rem;
+        background: radial-gradient(ellipse at 50% 40%, #121a30, #0b1020 70%);
+        border: 1px solid var(--ink-line);
+        border-radius: 10px;
+      }
+      .marker-grid .row-label {
+        font-size: 0.68rem;
+        color: var(--text-faint);
+      }
+      .marker-grid figure {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        margin: 0;
+      }
+      .marker-grid figcaption {
+        font-size: 0.58rem;
+        line-height: 1;
+        color: var(--text-faint);
+      }
+      /* Same hover the renderer applies, so the motion can be judged too. */
+      .marker-grid img {
+        animation: bob 2.4s ease-in-out infinite;
+        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(-2.5px);
+        }
+        50% {
+          transform: translateY(2.5px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .marker-grid img {
+          animation: none;
+        }
+      }
+      pre.sample {
+        padding: 0.75rem;
+        overflow-x: auto;
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        background: rgba(146, 170, 214, 0.07);
+        border: 1px solid var(--ink-line);
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="harness">
+      <h1>Closer — UI test page</h1>
+      <p>
+        Static preview of the win modal and the guess list, using the real
+        stylesheet. No server needed. The board, the game logic and the share
+        buttons are not here — run the app for those.
+      </p>
+
+      <div class="controls">
+        <button type="button" class="button-primary" id="open">
+          Show win modal
+        </button>
+        <button type="button" class="button-ghost" id="open-stats">
+          Show statistics modal
+        </button>
+        <button type="button" class="button-ghost" id="open-confirm">
+          Show give-up confirm
+        </button>
+        <button type="button" class="button-ghost" id="copy">
+          Test copy format
+        </button>
+      </div>
+
+      <h2>Share text</h2>
+      <pre class="sample" id="share">Closer - Daily Demo 78
+42 guesses, time: 07:31, hints: 2
+https://hiuchingpotato.github.io/semantle_bp/</pre>
+
+      <h2>Markers — which size is legible?</h2>
+      <p>
+        Rows are the sizes the board can draw. The top row is what ships now.
+        Change <code>MARKER_HEIGHT</code> in
+        <code>src/plot/markers.ts</code> to pick another.
+      </p>
+      <div class="marker-grid" id="markers"></div>
+
+      <h2>Guess list — is the answer clearly larger?</h2>
+      <div class="rail-mock">
+        <ol class="guess-rows">
+          <li class="guess-row tone-solved is-answer">
+            <span class="guess-turn">42</span>
+            <span class="guess-word"
+              >breakfast<span class="guess-flame">🔥</span></span
+            >
+            <span class="guess-similarity">100.00</span>
+            <span class="guess-rank">1</span>
+            <span class="guess-band">
+              <span class="guess-pips">
+                <span class="pip is-on"></span><span class="pip is-on"></span
+                ><span class="pip is-on"></span><span class="pip is-on"></span
+                ><span class="pip is-on"></span><span class="pip is-on"></span>
+              </span>
+              <span class="guess-band-label">Solved</span>
+            </span>
+          </li>
+
+          <li class="guess-row tone-blazing is-focus">
+            <span class="guess-turn">39</span>
+            <span class="guess-word">lunch</span>
+            <span class="guess-similarity">71.40</span>
+            <span class="guess-rank">#4</span>
+            <span class="guess-band">
+              <span class="guess-pips">
+                <span class="pip is-on"></span><span class="pip is-on"></span
+                ><span class="pip is-on"></span><span class="pip is-on"></span
+                ><span class="pip is-on"></span><span class="pip is-on"></span>
+              </span>
+              <span class="guess-band-label">Blazing</span>
+            </span>
+          </li>
+
+          <li class="guess-row tone-hot is-revealed">
+            <span class="guess-turn">31</span>
+            <span class="guess-word"
+              >morning<span class="guess-tag">hint</span></span
+            >
+            <span class="guess-similarity">48.02</span>
+            <span class="guess-rank">#118</span>
+            <span class="guess-band">
+              <span class="guess-pips">
+                <span class="pip is-on"></span><span class="pip is-on"></span
+                ><span class="pip is-on"></span><span class="pip is-on"></span
+                ><span class="pip"></span><span class="pip"></span>
+              </span>
+              <span class="guess-band-label">Hot</span>
+            </span>
+          </li>
+
+          <li class="guess-row tone-mild">
+            <span class="guess-turn">12</span>
+            <span class="guess-word">kitchen</span>
+            <span class="guess-similarity">27.63</span>
+            <span class="guess-rank"></span>
+            <span class="guess-band">
+              <span class="guess-pips">
+                <span class="pip is-on"></span><span class="pip is-on"></span
+                ><span class="pip"></span><span class="pip"></span
+                ><span class="pip"></span><span class="pip"></span>
+              </span>
+              <span class="guess-band-label">Mild</span>
+            </span>
+          </li>
+
+          <li class="guess-row tone-distant">
+            <span class="guess-turn">3</span>
+            <span class="guess-word">gravity</span>
+            <span class="guess-similarity">2.11</span>
+            <span class="guess-rank"></span>
+            <span class="guess-band">
+              <span class="guess-pips">
+                <span class="pip"></span><span class="pip"></span
+                ><span class="pip"></span><span class="pip"></span
+                ><span class="pip"></span><span class="pip"></span>
+              </span>
+              <span class="guess-band-label">Distant</span>
+            </span>
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="confirm-backdrop" hidden>
+      <div
+        class="modal modal-confirm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+      >
+        <button type="button" class="modal-close" id="confirm-close" aria-label="Close">
+          ×
+        </button>
+        <h2 id="confirm-title" class="modal-title modal-title-plain">Give up?</h2>
+        <p class="modal-confirm-body">
+          Are you sure you want to give up? You will lose your streak.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="button-primary" id="confirm-no">
+            No, keep playing
+          </button>
+          <button type="button" class="button-danger" id="confirm-yes">
+            Yes, reveal it
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="stats-backdrop" hidden>
+      <div
+        class="modal modal-stats-only"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="stats-title"
+      >
+        <button
+          type="button"
+          class="modal-close"
+          id="stats-close"
+          aria-label="Close"
+        >
+          ×
+        </button>
+
+        <h2 id="stats-title" class="modal-title modal-title-plain">Statistics</h2>
+
+        <dl class="modal-stats">
+          <div><dt>Played</dt><dd>12</dd></div>
+          <div><dt>Current streak</dt><dd>4</dd></div>
+          <div><dt>Max streak</dt><dd>9</dd></div>
+        </dl>
+
+        <p class="modal-note">
+          A streak continues as long as you do not miss a day. Solving a past
+          puzzle can repair one.
+        </p>
+
+        <div class="modal-actions">
+          <button type="button" class="button-primary" id="stats-ok">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="backdrop" hidden>
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="win-title"
+      >
+        <button type="button" class="modal-close" id="close" aria-label="Close">
+          ×
+        </button>
+
+        <h2 id="win-title" class="modal-title">Congratulations!</h2>
+
+        <p class="modal-lede">The word is</p>
+        <p class="modal-word">breakfast</p>
+
+        <dl class="modal-stats">
+          <div><dt>Played</dt><dd>12</dd></div>
+          <div><dt>Current streak</dt><dd>4</dd></div>
+          <div><dt>Max streak</dt><dd>9</dd></div>
+        </dl>
+
+        <p class="modal-result">42 guesses · 07:31 · 2 hints</p>
+
+        <div class="modal-actions">
+          <button type="button" class="button-primary" id="modal-copy">
+            Share with friends
+          </button>
+          <button type="button" class="button-ghost" id="modal-dismiss">
+            Dismiss
+          </button>
+        </div>
+
+        <p class="modal-share-note" id="modal-note">
+          Copies your result and a link to the game.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // Plain script, no modules: ES module imports are blocked over file://.
+
+      // Kept in step with MARKER_BANDS in src/plot/markers.ts by hand - this
+      // page cannot import it, because modules do not load over file://.
+      const MARKERS = [
+        { file: "4_hot_sauce.png", range: "0 · answer", scale: 1.6, glow: true },
+        { file: "4_hot_sauce.png", range: "1–9", scale: 1 },
+        { file: "3_sausage.png", range: "10–49", scale: 1 },
+        { file: "6_drumstick.png", range: "50–299", scale: 1 },
+        { file: "2_gherkin.png", range: "300–2999", scale: 1 },
+        { file: "1_ice_cream.png", range: "3000–9999", scale: 1 },
+        { file: "5_slushie.png", range: "10k–24999", scale: 1 },
+        { file: "5_slushie.png", range: "25000+", scale: 0.6 },
+      ];
+
+      const grid = document.getElementById("markers");
+      for (const [height, label] of [
+        [41, "41px — now"],
+        [49, "49px — focused"],
+        [60, "60px"],
+        [72, "72px"],
+      ]) {
+        const rowLabel = document.createElement("div");
+        rowLabel.className = "row-label";
+        rowLabel.textContent = label;
+        grid.append(rowLabel);
+
+        for (const marker of MARKERS) {
+          const figure = document.createElement("figure");
+          const img = document.createElement("img");
+          img.src = `./public/markers/${marker.file}`;
+          img.alt = marker.range;
+          img.style.height = `${Math.round(height * marker.scale)}px`;
+          if (marker.glow) {
+            // Stacked drop-shadows approximate the renderer's repeated canvas
+            // shadow passes: one alone is too faint to read.
+            img.style.filter =
+              "drop-shadow(0 0 5px #ffd684) drop-shadow(0 0 5px #ffd684) drop-shadow(0 0 4px #ffd684)";
+          }
+          // Stagger, so the row does not bob in unison - the renderer phases
+          // each marker off its vocabulary index for the same reason.
+          img.style.animationDelay = `${(MARKERS.indexOf(marker) * 0.31).toFixed(2)}s`;
+          const caption = document.createElement("figcaption");
+          caption.textContent = height === 41 ? marker.range : "";
+          figure.append(img, caption);
+          grid.append(figure);
+        }
+      }
+
+      const backdrop = document.getElementById("backdrop");
+      const share = document.getElementById("share");
+
+      const open = () => (backdrop.hidden = false);
+      const close = () => (backdrop.hidden = true);
+
+      document.getElementById("open").addEventListener("click", open);
+      document.getElementById("close").addEventListener("click", close);
+      backdrop.addEventListener("mousedown", (event) => {
+        if (event.target === backdrop) close();
+      });
+      const statsBackdrop = document.getElementById("stats-backdrop");
+      const closeStats = () => (statsBackdrop.hidden = true);
+
+      document
+        .getElementById("open-stats")
+        .addEventListener("click", () => (statsBackdrop.hidden = false));
+      document.getElementById("stats-close").addEventListener("click", closeStats);
+      document.getElementById("stats-ok").addEventListener("click", closeStats);
+      statsBackdrop.addEventListener("mousedown", (event) => {
+        if (event.target === statsBackdrop) closeStats();
+      });
+
+      const confirmBackdrop = document.getElementById("confirm-backdrop");
+      const closeConfirm = () => (confirmBackdrop.hidden = true);
+      document
+        .getElementById("open-confirm")
+        .addEventListener("click", () => (confirmBackdrop.hidden = false));
+      for (const id of ["confirm-close", "confirm-no", "confirm-yes"]) {
+        document.getElementById(id).addEventListener("click", closeConfirm);
+      }
+      confirmBackdrop.addEventListener("mousedown", (event) => {
+        if (event.target === confirmBackdrop) closeConfirm();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        close();
+        closeStats();
+        closeConfirm();
+      });
+
+      async function copyResult(button, restoreLabel, note) {
+        try {
+          await navigator.clipboard.writeText(share.textContent);
+          button.textContent = "Copied!";
+          if (note) {
+            note.textContent =
+              "Copied — paste it into WhatsApp, Instagram or anywhere else.";
+          }
+          setTimeout(() => {
+            button.textContent = restoreLabel;
+            if (note) note.textContent = "Copies your result and a link to the game.";
+          }, 2500);
+        } catch {
+          // Clipboard access is often refused over file://; the prompt always works.
+          window.prompt("Copy", share.textContent);
+        }
+      }
+
+      document
+        .getElementById("copy")
+        .addEventListener("click", (event) =>
+          copyResult(event.currentTarget, "Test copy format", null),
+        );
+
+      document
+        .getElementById("modal-copy")
+        .addEventListener("click", (event) =>
+          copyResult(
+            event.currentTarget,
+            "Share with friends",
+            document.getElementById("modal-note"),
+          ),
+        );
+
+      document.getElementById("modal-dismiss").addEventListener("click", close);
+    </script>
+  </body>
+</html>
