@@ -1,4 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { DEMO_LEADERBOARD } from '../config'
+import { demoPlayers } from './demoPlayers'
 import { load, save } from './storage'
 
 export interface ScoreEntry {
@@ -13,7 +15,7 @@ export interface ScoreEntry {
 
 export interface LeaderboardBackend {
   /** Human-readable label, shown so nobody mistakes the local dev board for the real one. */
-  readonly kind: 'global' | 'local'
+  readonly kind: 'global' | 'local' | 'demo'
   submit(entry: ScoreEntry): Promise<void>
   top(day: string, limit?: number): Promise<ScoreEntry[]>
 }
@@ -60,7 +62,7 @@ class SupabaseBackend implements LeaderboardBackend {
 
 /** Used when Supabase isn't configured — only ever shows scores from this browser. */
 class LocalBackend implements LeaderboardBackend {
-  readonly kind = 'local'
+  readonly kind: LeaderboardBackend['kind'] = 'local'
   async submit(e: ScoreEntry) {
     const all = load<ScoreEntry[]>('pfp:local-board', [])
     if (all.some((x) => x.day === e.day && x.playerId === e.playerId)) return
@@ -74,7 +76,17 @@ class LocalBackend implements LeaderboardBackend {
   }
 }
 
+/** This device's scores against a field of made-up players (see demoPlayers.ts). */
+class DemoBackend extends LocalBackend {
+  readonly kind = 'demo'
+  async top(day: string, limit = 50) {
+    const mine = await super.top(day, limit)
+    return [...mine, ...demoPlayers(day)].sort((a, b) => b.score - a.score).slice(0, limit)
+  }
+}
+
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-export const leaderboard: LeaderboardBackend = url && key ? new SupabaseBackend(url, key) : new LocalBackend()
+export const leaderboard: LeaderboardBackend =
+  url && key ? new SupabaseBackend(url, key) : DEMO_LEADERBOARD ? new DemoBackend() : new LocalBackend()

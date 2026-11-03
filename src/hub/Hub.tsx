@@ -163,6 +163,7 @@ function PizzaLeaderboard({ day }: { day: string }) {
       <div className="board__head">
         <h2>Today’s P for Pizza top 5</h2>
         {leaderboard.kind === 'local' ? <span className="board__tag">This device only</span> : null}
+        {leaderboard.kind === 'demo' ? <span className="board__tag">Demo players</span> : null}
       </div>
       {rows === null ? (
         <p className="board__empty">Loading…</p>

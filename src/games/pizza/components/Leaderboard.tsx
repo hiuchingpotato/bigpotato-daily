@@ -49,6 +49,7 @@ export function Leaderboard({ day, playerId, refreshKey }: Props) {
       <header className="board__head">
         <h2>Today’s biggest slices</h2>
         {leaderboard.kind === 'local' ? <span className="board__badge">This device only</span> : null}
+        {leaderboard.kind === 'demo' ? <span className="board__badge">Demo players</span> : null}
       </header>
       {error ? (
         <p className="board__msg">Couldn’t load the leaderboard. Try again in a bit.</p>
