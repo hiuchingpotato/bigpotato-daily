@@ -54,7 +54,7 @@ jobs:
         if: steps.glove.outputs.cache-hit != 'true'
         run: |
           mkdir -p .tooling
-          curl -sSfL -o glove.zip \
+          curl -sSfL --retry 4 --retry-all-errors -o glove.zip \
             https://huggingface.co/stanfordnlp/glove/resolve/main/glove.6B.zip
           unzip -o glove.zip glove.6B.300d.txt -d .tooling/
           rm glove.zip
@@ -65,9 +65,9 @@ jobs:
       - name: Download the word lists
         run: |
           mkdir -p .tooling
-          curl -sSfL -o .tooling/words_alpha.txt \
+          curl -sSfL --retry 4 --retry-all-errors -o .tooling/words_alpha.txt \
             https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt
-          curl -sSfL -o .tooling/everyday_en.txt \
+          curl -sSfL --retry 4 --retry-all-errors -o .tooling/everyday_en.txt \
             https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_full.txt
 
       - name: Build game data
