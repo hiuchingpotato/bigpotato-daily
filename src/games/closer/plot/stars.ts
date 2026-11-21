@@ -1,5 +1,6 @@
 /**
- * Shooting stars across the background.
+ * Shooting stars across the background, drawn in the Sling 'Em comic's style: a
+ * hollow doodled star that tumbles as it flies, with three white speed lines.
  *
  * Atmosphere only - they carry no meaning and never sit near enough to the
  * centre to be mistaken for a word. They are drawn in screen space rather than
@@ -114,38 +115,56 @@ export class ShootingStars {
 
     ctx.save();
     ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#ffffff";
 
     for (const star of this.stars) {
       const age = now - star.bornAt;
       const alpha = starAlpha(age / star.life);
       if (alpha <= 0.01) continue;
+      ctx.globalAlpha = alpha;
 
       const headX = star.x + star.vx * age;
       const headY = star.y + star.vy * age;
-      // The trail points back along the direction of travel.
+      // Unit vectors along the direction of travel and across it.
       const speed = Math.hypot(star.vx, star.vy) || 1;
-      const tailX = headX - (star.vx / speed) * star.length;
-      const tailY = headY - (star.vy / speed) * star.length;
+      const ux = star.vx / speed;
+      const uy = star.vy / speed;
+      const nx = -uy;
+      const ny = ux;
 
-      const gradient = ctx.createLinearGradient(tailX, tailY, headX, headY);
-      gradient.addColorStop(0, "rgba(190, 214, 255, 0)");
-      gradient.addColorStop(1, `rgba(226, 238, 255, ${alpha * 0.85})`);
-
-      ctx.strokeStyle = gradient;
-      ctx.lineWidth = 1.6;
+      // Speed lines: three flat strokes behind the star, the middle one longest,
+      // each starting a little back from the star so they read as motion, not a tail.
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(tailX, tailY);
-      ctx.lineTo(headX, headY);
+      for (const [across, length] of [[-5, 0.55], [0, 1], [5, 0.55]] as const) {
+        const startX = headX - ux * 12 + nx * across;
+        const startY = headY - uy * 12 + ny * across;
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(startX - ux * star.length * length, startY - uy * star.length * length);
+      }
       ctx.stroke();
 
-      // A small bright head, so it reads as a point of light with a tail
-      // rather than a drawn line.
-      ctx.beginPath();
-      ctx.arc(headX, headY, 1.4, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(240, 247, 255, ${alpha})`;
-      ctx.fill();
+      // The star itself, hollow, tumbling as it goes.
+      drawDoodleStar(ctx, headX, headY, 7, age / 180);
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
 
     ctx.restore();
   }
+}
+
+/** A hollow five-point star path, as in the comic's hand-drawn stars. */
+function drawDoodleStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, rotation: number): void {
+  ctx.beginPath();
+  for (let k = 0; k < 10; k++) {
+    const radius = k % 2 === 0 ? r : r * 0.46;
+    const angle = rotation + (k * Math.PI) / 5;
+    const x = cx + radius * Math.sin(angle);
+    const y = cy - radius * Math.cos(angle);
+    if (k === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
 }

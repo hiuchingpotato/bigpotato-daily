@@ -18,11 +18,11 @@ import {
  *
  * Two layers, drawn very differently:
  *
- * 1. Dust - all 60,000 words. Written straight into an ImageData buffer with
- *    additive alpha, one pixel per word, so overlapping words brighten rather
- *    than overdraw. Sixty thousand fill() calls a frame would not hold 60fps;
- *    sixty thousand array writes do. Density becomes visible structure, which
- *    is the point: you can see the shape of the language around the answer.
+ * 1. Dust - all 60,000 words, drawn as a comic halftone. Words are counted
+ *    into a grid of cells and each cell becomes one flat dot sized by how many
+ *    words fell in it, so density still shows the shape of the language around
+ *    the answer, but as print shading rather than a glowing nebula. Counting is
+ *    sixty thousand array writes; drawing is one dot per occupied cell.
  *
  * 2. Everything the player put there - rings, guesses, labels - with the normal
  *    2D context on top, where quality matters and the counts are small.
@@ -51,7 +51,10 @@ export const ZOOM_REFERENCE = 400;
 /** Rings mark the ranks a player is trying to cross. */
 const GUIDE_RANKS = [10, 100, 1000, 10_000] as const;
 
-const DUST_COLOUR = { r: 122, g: 162, b: 214 };
+/** Halftone ink: a mid comic blue that sits back behind the white doodles and planets. */
+const DUST_COLOUR = "#4a6a9e";
+/** Halftone cell size in CSS pixels; each occupied cell is one dot. */
+const DUST_CELL = 6;
 
 export type RenderInput = {
   camera: Camera;
@@ -95,8 +98,6 @@ export function screenToBoard(
 }
 
 class DustLayer {
-  private image: ImageData | null = null;
-  private pixels: Uint32Array | null = null;
   private width = 0;
   private height = 0;
   /** Rasterised dust, kept so the animation loop can blit rather than recompute. */
@@ -104,11 +105,9 @@ class DustLayer {
   private cacheKey = "";
 
   resize(width: number, height: number): void {
-    if (width === this.width && height === this.height && this.image) return;
+    if (width === this.width && height === this.height && this.cache) return;
     this.width = width;
     this.height = height;
-    this.image = new ImageData(width, height);
-    this.pixels = new Uint32Array(this.image.data.buffer);
     this.cache = document.createElement("canvas");
     this.cache.width = width;
     this.cache.height = height;
@@ -120,8 +119,8 @@ class DustLayer {
    * Paint the dust, recomputing only when the view has actually moved.
    *
    * The markers hover continuously, so this runs 60 times a second. Walking
-   * 60,000 words and clearing a megapixel buffer that often would burn a laptop
-   * battery for no visible gain - the field only changes when the camera does.
+   * 60,000 words that often would burn a laptop battery for no visible gain -
+   * the field only changes when the camera does.
    */
   paint(ctx: CanvasRenderingContext2D, input: RenderInput): void {
     const { camera } = input;
@@ -135,58 +134,58 @@ class DustLayer {
 
   private rasterise(input: RenderInput): void {
     const { width, height } = this;
-    if (!this.image || !this.pixels || width === 0 || height === 0) return;
+    const out = this.cache?.getContext("2d");
+    if (!out || width === 0 || height === 0) return;
+    out.clearRect(0, 0, width, height);
 
-    const pixels = this.pixels;
-    pixels.fill(0);
-
-    const { camera, xs, ys, wordCount } = input;
+    const { camera, viewport, xs, ys, wordCount } = input;
+    // The dust is painted in device pixels; the cell is set in CSS pixels.
+    const dpr = viewport.dpr;
+    const cell = DUST_CELL * dpr;
+    const cols = Math.ceil(width / cell) + 1;
+    const rows = Math.ceil(height / cell) + 1;
+    const counts = new Uint16Array(cols * rows);
     const halfW = width / 2;
     const halfH = height / 2;
 
-    // Zoomed in there are fewer words per pixel, so each one has to carry more
-    // brightness or the field thins out into invisibility. Zoomed out there are
-    // many per pixel and a low step lets density do the work.
-    const step = Math.min(210, Math.max(55, 55 * (camera.scale / 400) ** 0.75));
-    // Little-endian ABGR: alpha is set per pixel, colour is constant.
-    const rgb =
-      (DUST_COLOUR.b << 16) | (DUST_COLOUR.g << 8) | DUST_COLOUR.r;
-    const chunky = camera.scale > 900;
-
     for (let i = 0; i < wordCount; i++) {
-      const px = ((xs[i]! - camera.x) * camera.scale + halfW) | 0;
+      const px = (xs[i]! - camera.x) * camera.scale + halfW;
       if (px < 0 || px >= width) continue;
-      const py = (halfH - (ys[i]! - camera.y) * camera.scale) | 0;
+      const py = halfH - (ys[i]! - camera.y) * camera.scale;
       if (py < 0 || py >= height) continue;
-
-      if (chunky) {
-        // A single pixel is invisible at high zoom; a 2x2 block reads as a mote.
-        for (let dy = 0; dy < 2; dy++) {
-          const yy = py + dy;
-          if (yy >= height) break;
-          for (let dx = 0; dx < 2; dx++) {
-            const xx = px + dx;
-            if (xx >= width) break;
-            this.accumulate(pixels, yy * width + xx, step, rgb);
-          }
-        }
-      } else {
-        this.accumulate(pixels, py * width + px, step, rgb);
-      }
+      const row = (py / cell) | 0;
+      // Odd rows are offset by half a cell, like a printed halftone screen.
+      const col = ((px + (row & 1 ? cell / 2 : 0)) / cell) | 0;
+      const index = row * cols + col;
+      if (counts[index]! < 65535) counts[index]!++;
     }
 
-    this.cache?.getContext("2d")?.putImageData(this.image, 0, 0);
-  }
+    // Scale dot size to this view's own density, so the field reads the same
+    // zoomed in (a few words per cell) as zoomed out (hundreds).
+    const occupied: number[] = [];
+    for (let i = 0; i < counts.length; i++) if (counts[i]) occupied.push(counts[i]!);
+    if (occupied.length === 0) return;
+    occupied.sort((a, b) => a - b);
+    // Only the densest few percent of cells get full-size dots.
+    const full = Math.max(1, occupied[Math.floor(occupied.length * 0.98)]!);
 
-  private accumulate(
-    pixels: Uint32Array,
-    offset: number,
-    step: number,
-    rgb: number,
-  ): void {
-    const alpha = (pixels[offset]! >>> 24) & 0xff;
-    const next = alpha + step > 255 ? 255 : alpha + step;
-    pixels[offset] = (next << 24) | rgb;
+    const maxR = cell * 0.4;
+    const minR = Math.min(maxR, 0.6 * dpr);
+    out.fillStyle = DUST_COLOUR;
+    out.beginPath();
+    for (let row = 0; row < rows; row++) {
+      const offset = row & 1 ? cell / 2 : 0;
+      for (let col = 0; col < cols; col++) {
+        const count = counts[row * cols + col]!;
+        if (!count) continue;
+        const r = Math.max(minR, maxR * Math.min(1, count / full) ** 0.8);
+        const cx = col * cell - offset + cell / 2;
+        const cy = row * cell + cell / 2;
+        out.moveTo(cx + r, cy);
+        out.arc(cx, cy, r, 0, Math.PI * 2);
+      }
+    }
+    out.fill();
   }
 }
 
@@ -235,7 +234,8 @@ export class OrbitRenderer {
       viewport: {
         width: viewport.width * viewport.dpr,
         height: viewport.height * viewport.dpr,
-        dpr: 1,
+        // Already in device pixels; passed through so the halftone cell can be set in CSS pixels.
+        dpr: viewport.dpr,
       },
     });
 
