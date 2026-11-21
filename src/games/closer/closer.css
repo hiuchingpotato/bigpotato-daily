@@ -39,8 +39,10 @@
   --rail-width: 26rem;
 
   color-scheme: dark;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", sans-serif;
+  /* Same type as the home page and P for Pizza: Asap for reading, Asap Condensed
+     Bold for headings, labels and buttons. */
+  --font-head: "Asap Condensed", "Asap", system-ui, sans-serif;
+  font-family: "Asap", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-synthesis-weight: none;
   -webkit-text-size-adjust: 100%;
 }
@@ -1401,6 +1403,21 @@ button:disabled {
   color: var(--text-dim);
 }
 
+
+/* Headings, labels and buttons. Last in the file, so the many `font: inherit`
+   resets above don't undo it. */
+.wordmark,
+.puzzle-number,
+.panel h2,
+.panel-toggle,
+.modal-title,
+.segmented button,
+.guess-tag,
+.button-primary,
+.button-ghost,
+.help-button {
+  font-family: var(--font-head);
+}
 }
 
 @keyframes spin {

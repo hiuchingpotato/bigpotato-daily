@@ -259,8 +259,7 @@ export class OrbitRenderer {
     ctx.save();
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 6]);
-    ctx.font =
-      "500 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    ctx.font = "700 11px 'Asap Condensed', 'Asap', system-ui, sans-serif";
     ctx.textAlign = "center";
 
     for (const rank of GUIDE_RANKS) {
@@ -304,8 +303,7 @@ export class OrbitRenderer {
     const claimed: Array<{ x: number; y: number }> = [];
 
     ctx.save();
-    ctx.font =
-      "600 12px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
+    ctx.font = "700 13px 'Asap Condensed', 'Asap', system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
 
@@ -478,8 +476,7 @@ export class OrbitRenderer {
       // anchor point when it has not loaded yet.
       const labelY = answerTop !== null ? answerTop - 8 : py - 20;
 
-      ctx.font =
-        "700 24px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
+      ctx.font = "700 24px 'Asap Condensed', 'Asap', system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.lineWidth = 4;
       ctx.strokeStyle = "rgba(8, 12, 26, 0.9)";

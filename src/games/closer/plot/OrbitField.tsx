@@ -179,6 +179,15 @@ export default function OrbitField({
     return () => observer.disconnect();
   }, [requestDraw]);
 
+  // Canvas text doesn't wait for web fonts, so redraw once Asap has arrived.
+  useEffect(() => {
+    let live = true;
+    void document.fonts?.ready.then(() => live && requestDraw());
+    return () => {
+      live = false;
+    };
+  }, [requestDraw]);
+
   useEffect(() => {
     requestDraw();
   }, [guesses, focus, solved, requestDraw]);
