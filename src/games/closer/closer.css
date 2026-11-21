@@ -162,8 +162,9 @@ body:has(.game-closer) {
 
 /* Comic space, after the Sling 'Em panel: flat black, with planets tucked around
    the edges, well clear of the word field. OrbitField moves the planets with the
-   camera; the white star doodles are drawn on the board canvas. Both sit at 30% so
-   the guide rings and words stay the clearest thing on the board. */
+   camera; the white star doodles are drawn on the board canvas. The planets are
+   near-solid (90%); the star doodles sit at 30% so the guide rings and words stay
+   the clearest thing on the board. */
 .orbit-space {
   position: absolute;
   inset: 0;
@@ -175,7 +176,7 @@ body:has(.game-closer) {
 .orbit-planets {
   position: absolute;
   inset: 0;
-  opacity: 0.3;
+  opacity: 0.9;
   will-change: transform;
 }
 
