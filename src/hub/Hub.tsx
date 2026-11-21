@@ -181,7 +181,12 @@ function TodayCard({ route, art, mascot, name, kicker, blurb, number, date, stre
   return (
     <Link to={route} className={`card card--today card--${route}`}>
       <img className="art" src={`${import.meta.env.BASE_URL}hub/${art}`} alt="" />
-      {mascot ? <img className="card__mascot" src={`${import.meta.env.BASE_URL}hub/sausage.png`} alt="" /> : null}
+      {mascot ? (
+        // Clipped to the card, so the sausage looks like it's rising out of the bottom edge.
+        <span className="card__mascot-clip">
+          <img className="card__mascot" src={`${import.meta.env.BASE_URL}hub/sausage.png`} alt="" />
+        </span>
+      ) : null}
       <div className="card__body">
         <div className="card__head">
           <h2>{name}</h2>

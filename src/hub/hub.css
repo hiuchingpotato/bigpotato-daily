@@ -226,16 +226,24 @@ body:has(.hub) {
     border-radius: 15px 15px 0 0;
   }
 
+  /* Same shape as the card's inside, so nothing of the sausage spills past its edges. */
+  .card__mascot-clip {
+    position: absolute;
+    inset: 0;
+    /* Above the text panel: it peeks over the panel's corner. */
+    z-index: 1;
+    overflow: hidden;
+    border-radius: 15px;
+    pointer-events: none;
+  }
+
   .card__mascot {
     position: absolute;
-    /* Peeks over the text panel, like it's climbing out of the card. */
-    z-index: 1;
-    right: -10px;
-    bottom: -20px;
-    width: 92px;
-    transform: rotate(6deg);
-    filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
-    pointer-events: none;
+    right: 4px;
+    /* Its lower body is cut off by the card's bottom edge. */
+    bottom: -34px;
+    width: 96px;
+    transform: rotate(-4deg);
   }
 
   .card__body {
