@@ -226,24 +226,11 @@ body:has(.hub) {
     border-radius: 15px 15px 0 0;
   }
 
-  /* Same shape as the card's inside, so nothing of the sausage spills past its edges. */
-  .card__mascot-clip {
-    position: absolute;
-    inset: 0;
-    /* Above the text panel: it peeks over the panel's corner. */
-    z-index: 1;
-    overflow: hidden;
-    border-radius: 15px;
-    pointer-events: none;
-  }
-
+  /* Sits just left of the Play button (or the countdown), inside the panel. */
   .card__mascot {
-    position: absolute;
-    right: 4px;
-    /* Its lower body is cut off by the card's bottom edge. */
-    bottom: -34px;
-    width: 96px;
-    transform: rotate(-4deg);
+    width: 46px;
+    margin-bottom: -2px;
+    transform: rotate(-6deg);
   }
 
   .card__body {
@@ -257,11 +244,6 @@ body:has(.hub) {
     background: var(--hub-surface);
     border: 2px solid var(--hub-outline);
     color: var(--hub-ink);
-  }
-
-  .card--closer .card__body {
-    /* Leave the sausage most of its corner. */
-    margin-right: 50px;
   }
 
   .card__head {
@@ -329,8 +311,14 @@ body:has(.hub) {
     font-weight: 600;
   }
 
-  .card__countdown {
+  .card__actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
     margin-left: auto;
+  }
+
+  .card__countdown {
     text-align: right;
     white-space: nowrap;
 
