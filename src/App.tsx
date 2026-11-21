@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Hub } from './hub/Hub'
 import { LeaderboardPage } from './hub/LeaderboardPage'
+import { StreakPage } from './hub/StreakPage'
 import { useLocationKey, useRoute, type Route } from './router'
 
 // Each game loads only when it's opened, so the home page never pulls in Closer's
@@ -13,6 +14,7 @@ const TITLES: Record<Route, string> = {
   pizza: 'P for Pizza Daily',
   closer: 'Closer',
   leaderboard: 'Leaderboard · Big Potato Daily',
+  stats: 'Streak & calendar · Big Potato Daily',
 }
 
 export default function App() {
@@ -26,6 +28,7 @@ export default function App() {
 
   if (route === 'home') return <Hub />
   if (route === 'leaderboard') return <LeaderboardPage />
+  if (route === 'stats') return <StreakPage key={locationKey} />
 
   // The wrapper class is what each game's stylesheet is scoped to.
   return (

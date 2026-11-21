@@ -34,7 +34,7 @@ export default defineConfig({
   // sets PAGES_BASE. Vite rewrites asset URLs with it and exposes it as
   // import.meta.env.BASE_URL, which is how the games find their data. "/" locally.
   base: process.env.PAGES_BASE ?? '/',
-  plugins: [react(), routePages(['pizza', 'closer', 'leaderboard'])],
+  plugins: [react(), routePages(['pizza', 'closer', 'leaderboard', 'stats'])],
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

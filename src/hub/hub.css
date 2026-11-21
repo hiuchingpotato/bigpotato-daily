@@ -412,6 +412,208 @@ body:has(.hub) {
     color: var(--hub-done);
   }
 
+  /* The last card in each row: opens that game's streak & calendar. */
+  .card--more {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: var(--hub-yellow);
+  }
+
+  .card__more-plus {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--hub-outline);
+    border-radius: 999px;
+    background: var(--hub-surface);
+    font-family: var(--hub-font-head);
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+
+  .card__more-label {
+    margin-top: 8px;
+    font-family: var(--hub-font-head);
+    font-size: 1.05rem;
+    line-height: 1.1;
+  }
+
+  /* ─── Streak & calendar page ─────────────────────────── */
+
+  .stats__kicker {
+    font-family: var(--hub-font-head);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .stats__tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stats__tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    background: var(--hub-surface);
+    border: 3px solid var(--hub-outline);
+    border-radius: 14px;
+    box-shadow: 0 3px 0 var(--hub-outline);
+  }
+
+  .stats__value {
+    font-family: var(--hub-font-head);
+    font-size: 1.7rem;
+    line-height: 1.05;
+  }
+
+  .stats__label {
+    color: var(--hub-ink-soft);
+    font-family: var(--hub-font-head);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .cal {
+    padding: 14px;
+    background: var(--hub-surface);
+    border: 3px solid var(--hub-outline);
+    border-radius: 18px;
+    box-shadow: 0 4px 0 var(--hub-outline);
+  }
+
+  .cal__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+
+    h2 {
+      font-family: var(--hub-font-head);
+      font-size: 1.3rem;
+    }
+  }
+
+  .cal__nav {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--hub-outline);
+    border-radius: 999px;
+    background: var(--hub-yellow);
+    color: var(--hub-ink);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .cal__nav:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .cal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .cal__weekday {
+    padding-bottom: 2px;
+    color: var(--hub-ink-soft);
+    font-family: var(--hub-font-head);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .cal__day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    color: var(--hub-ink);
+    font-family: var(--hub-font-head);
+    font-size: 0.95rem;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .cal__detail {
+    margin-top: 2px;
+    font-family: var(--hub-font-body);
+    font-size: 0.62rem;
+    opacity: 0.9;
+  }
+
+  .cal__day--off {
+    color: var(--hub-line);
+  }
+
+  .cal__day--done {
+    background: #3fae4f;
+    color: #fff;
+  }
+
+  .cal__day--late {
+    background: #c9ecce;
+  }
+
+  .cal__day--gaveup {
+    background: #fbd0cb;
+  }
+
+  .cal__day--started {
+    background: var(--hub-yellow);
+  }
+
+  .cal__day--missed {
+    background: #f1ece4;
+    color: #a39889;
+  }
+
+  .cal__day--today {
+    box-shadow: inset 0 0 0 3px var(--hub-outline);
+  }
+
+  .cal__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.85rem;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  .cal__swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    aspect-ratio: auto;
+    border-radius: 4px;
+  }
+
+  .cal__note {
+    margin-top: 10px;
+    color: var(--hub-ink-soft);
+    font-weight: 500;
+    font-size: 0.82rem;
+  }
+
   /* ─── Leaderboard page ───────────────────────────────── */
 
   .lb-tabs {

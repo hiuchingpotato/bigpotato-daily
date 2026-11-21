@@ -100,6 +100,7 @@ export function Hub() {
               done={p.status === 'done'}
             />
           ))}
+          <MoreCard game="pizza" />
         </GameRow>
 
         <GameRow label="Closer">
@@ -128,6 +129,7 @@ export function Hub() {
               done={['solved', 'replayed', 'gaveup'].includes(c.state)}
             />
           ))}
+          <MoreCard game="closer" />
         </GameRow>
       </main>
     </div>
@@ -224,6 +226,18 @@ function PastCard({ route, search, date, number, status, done }: PastCardProps) 
       <span className="card__past-date">{date}</span>
       <span className="card__past-num">#{number}</span>
       <span className={done ? 'card__past-status card__past-status--done' : 'card__past-status'}>{status}</span>
+    </Link>
+  )
+}
+
+/** The last card in a row: opens that game's streak & calendar screen. */
+function MoreCard({ game }: { game: 'pizza' | 'closer' }) {
+  return (
+    <Link to="stats" search={`game=${game}`} className="card card--past card--more">
+      <span className="card__more-plus" aria-hidden="true">
+        +
+      </span>
+      <span className="card__more-label">Streak &amp; calendar</span>
     </Link>
   )
 }

@@ -47,3 +47,30 @@ export async function closerSummary(pastCount: number, now = new Date()): Promis
     streak: summarise(stats, today).currentStreak,
   };
 }
+
+export type CloserHistory = {
+  /** Puzzle 0 onwards, oldest first. */
+  days: CloserDay[];
+  streak: number;
+  bestStreak: number;
+  solved: number;
+  /** Fewest guesses in any solve, or null before the first. */
+  bestGuesses: number | null;
+};
+
+/** Every puzzle up to today, read from this device. */
+export async function closerHistory(now = new Date()): Promise<CloserHistory> {
+  const [manifest, stats] = await Promise.all([fetchManifest(), loadStats()]);
+  const { today } = resolveSchedule(manifest.epoch, manifest.puzzleCount, now, null);
+  const days: CloserDay[] = [];
+  for (let puzzle = 0; puzzle <= today; puzzle++) days.push(dayOf(stats, manifest.epoch, puzzle, today));
+  const summary = summarise(stats, today);
+  const guesses = stats.solves.map((s) => s.guesses);
+  return {
+    days,
+    streak: summary.currentStreak,
+    bestStreak: summary.maxStreak,
+    solved: stats.solves.length,
+    bestGuesses: guesses.length ? Math.min(...guesses) : null,
+  };
+}
