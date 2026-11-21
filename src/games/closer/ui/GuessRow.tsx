@@ -42,6 +42,8 @@ export default function GuessRow({ guess, isFocus }: Props) {
       <span className="guess-similarity" title="Semantic similarity">
         {formatSimilarity(guess.similarity)}
       </span>
+      {/* How hot, in words, between the number and the meter. */}
+      <span className="guess-band-label">{band.label}</span>
       <span className="guess-rank">{rankLabel ?? ""}</span>
       <span className="guess-band">
         <span className="guess-pips" aria-hidden="true">
@@ -52,7 +54,6 @@ export default function GuessRow({ guess, isFocus }: Props) {
             />
           ))}
         </span>
-        <span className="guess-band-label">{band.label}</span>
       </span>
     </li>
   );
