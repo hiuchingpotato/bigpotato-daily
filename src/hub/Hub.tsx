@@ -30,7 +30,6 @@ function useNow(): Date {
   return now
 }
 
-const longDate = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 const shortDate = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 const dayDate = (dayKey: string) => new Date(`${dayKey}T12:00:00`)
 
@@ -84,7 +83,7 @@ export function Hub() {
             kicker="Cheesy letter game"
             blurb="Think quick, build a point-heavy pizza every day."
             number={pizza.puzzle}
-            date={longDate(now)}
+            date={shortDate(now)}
             streak={pizza.streak}
             result={pizza.status === 'done' ? `${pizza.score ?? 0} pts` : pizza.status === 'playing' ? 'In progress' : null}
             played={pizza.status === 'done'}
@@ -110,9 +109,9 @@ export function Hub() {
             mascot
             name="Closer"
             kicker="Word-meaning game"
-            blurb="Guess the secret word. Every guess shows how close you are in meaning."
+            blurb="Find the secret word by how close each guess is."
             number={closerOk?.today.puzzle ?? null}
-            date={longDate(now)}
+            date={shortDate(now)}
             streak={closerOk?.streak ?? null}
             result={closer === 'error' ? 'Couldn’t load today’s puzzle' : closerOk ? closerResult(closerOk.today) : null}
             played={!!closerOk && ['solved', 'replayed', 'gaveup'].includes(closerOk.today.state)}

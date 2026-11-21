@@ -203,7 +203,8 @@ body:has(.hub) {
     }
     display: flex;
     align-items: flex-end;
-    overflow: visible;
+    /* Clips the sausage at the card's bottom edge. */
+    overflow: hidden;
   }
 
   .art {
@@ -226,11 +227,21 @@ body:has(.hub) {
     border-radius: 15px 15px 0 0;
   }
 
-  /* Sits just left of the Play button (or the countdown), inside the panel. */
+  /* Tucked in just left of the Play button (or the countdown), partly behind it. It is
+     positioned over the panel rather than laid out in it, so Closer's panel stays the
+     same size as P for Pizza's; its lower body is cut off by the card's bottom edge. */
   .card__mascot {
-    width: 46px;
-    margin-bottom: -2px;
-    transform: rotate(-6deg);
+    position: absolute;
+    right: calc(100% - 20px);
+    bottom: -60px;
+    width: 96px;
+    transform: rotate(-4deg);
+    pointer-events: none;
+
+    /* Small phones: tuck further behind Play so it clears the date. */
+    @media (max-width: 359px) {
+      right: calc(100% - 42px);
+    }
   }
 
   .card__body {
@@ -240,6 +251,10 @@ body:has(.hub) {
     /* The top of the card is left open so the artwork shows. */
     margin: 96px 12px 12px;
     padding: 12px 14px;
+    /* Every game's panel is the same size: a fixed layout with room for a result line. */
+    display: flex;
+    flex-direction: column;
+    min-height: 188px;
     border-radius: 12px;
     background: var(--hub-surface);
     border: 2px solid var(--hub-outline);
@@ -277,6 +292,13 @@ body:has(.hub) {
     font-weight: 500;
     font-size: 0.9rem;
     opacity: 0.85;
+    /* Always two lines, so panels match whatever the copy. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    min-height: 2.7em;
   }
 
   .card__result {
@@ -291,7 +313,8 @@ body:has(.hub) {
     align-items: flex-end;
     justify-content: space-between;
     gap: 8px;
-    margin-top: 10px;
+    margin-top: auto;
+    padding-top: 10px;
     font-size: 0.82rem;
   }
 
@@ -312,9 +335,9 @@ body:has(.hub) {
   }
 
   .card__actions {
+    position: relative;
     display: flex;
     align-items: flex-end;
-    gap: 6px;
     margin-left: auto;
   }
 
@@ -325,6 +348,12 @@ body:has(.hub) {
     b {
       font-variant-numeric: tabular-nums;
     }
+  }
+
+  .card__play,
+  .card__countdown {
+    /* In front of the sausage. */
+    position: relative;
   }
 
   .card__play {
