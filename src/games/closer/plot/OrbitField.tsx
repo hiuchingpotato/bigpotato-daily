@@ -36,21 +36,17 @@ function prefersReducedMotion(): boolean {
 
 /**
  * The comic-style space behind the board, built from the Sling 'Em panel: flat
- * black, hand-drawn stars and dots (a repeating tile), and the comic's planets
- * around the edges. Both follow the camera, a little slower than the words (so
- * they read as distant): zooming in carries the planets out of frame, and
- * panning drags the whole sky along.
+ * black and the comic's planets around the edges. The planets follow the camera,
+ * a little slower than the words (so they read as distant): zooming in carries
+ * them out of frame, and panning drags them along. The white star doodles are
+ * drawn on the board itself (starfield.ts).
  */
 const PLANETS = ["ringed", "purple", "earth", "lightblue", "red", "blue"] as const;
 
-/** Star tile size in CSS pixels at the fitted zoom. */
-const STAR_TILE = 420;
-
-function SpaceBackdrop({ starsRef, planetsRef }: { starsRef: RefObject<HTMLDivElement | null>; planetsRef: RefObject<HTMLDivElement | null> }) {
+function SpaceBackdrop({ planetsRef }: { planetsRef: RefObject<HTMLDivElement | null> }) {
   const base = `${import.meta.env.BASE_URL}closer/space/`;
   return (
     <div className="orbit-space" aria-hidden="true">
-      <div className="orbit-stars" ref={starsRef} />
       <div className="orbit-planets" ref={planetsRef}>
         {PLANETS.map((name) => (
           <img key={name} className={`orbit-planet orbit-planet--${name}`} src={`${base}${name}.png`} alt="" />
@@ -61,13 +57,11 @@ function SpaceBackdrop({ starsRef, planetsRef }: { starsRef: RefObject<HTMLDivEl
 }
 
 /**
- * Move the backdrop with the camera. At the fitted zoom it sits as laid out in
- * CSS; from there the planets scale about the board's centre by (zoom ratio)^0.6
- * and the star tile by a gentler ^0.25, capped, so zooming far in leaves a few
- * large stars rather than one giant one.
+ * Move the planets with the camera. At the fitted zoom they sit as laid out in
+ * CSS; from there they scale about the board's centre by (zoom ratio)^0.6.
  */
-function placeBackdrop(stars: HTMLDivElement | null, planets: HTMLDivElement | null, camera: Camera, viewport: Viewport): void {
-  if (!stars || !planets || viewport.width === 0) return;
+function placeBackdrop(planets: HTMLDivElement | null, camera: Camera, viewport: Viewport): void {
+  if (!planets || viewport.width === 0) return;
   const ratio = camera.scale / fitCamera(viewport).scale;
   const centre = boardToScreen(0, 0, camera, viewport);
   const dx = centre.px - viewport.width / 2;
@@ -78,11 +72,6 @@ function placeBackdrop(stars: HTMLDivElement | null, planets: HTMLDivElement | n
   const planetScale = ratio ** 0.6;
   planets.style.transformOrigin = `${viewport.width / 2}px ${viewport.height / 2}px`;
   planets.style.transform = `translate(${dx * 0.6}px, ${dy * 0.6}px) scale(${planetScale})`;
-
-  const starScale = Math.min(1.8, Math.max(0.7, ratio ** 0.25));
-  const tile = STAR_TILE * starScale;
-  stars.style.backgroundSize = `${tile}px ${tile}px`;
-  stars.style.backgroundPosition = `${dx * 0.3 + viewport.width / 2}px ${dy * 0.3 + viewport.height / 2}px`;
 }
 
 export default function OrbitField({
@@ -96,7 +85,6 @@ export default function OrbitField({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const starsRef = useRef<HTMLDivElement>(null);
   const planetsRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef(new OrbitRenderer(`${import.meta.env.BASE_URL}closer/`));
 
@@ -163,7 +151,7 @@ export default function OrbitField({
         timeMs: performance.now(),
         animate,
       });
-      placeBackdrop(starsRef.current, planetsRef.current, cameraRef.current, viewportRef.current);
+      placeBackdrop(planetsRef.current, cameraRef.current, viewportRef.current);
       setZoomLabel(cameraRef.current.scale);
 
       // Keep going while the camera is easing, or while markers are hovering.
@@ -402,7 +390,7 @@ export default function OrbitField({
 
   return (
     <div className="orbit" ref={wrapRef}>
-      <SpaceBackdrop starsRef={starsRef} planetsRef={planetsRef} />
+      <SpaceBackdrop planetsRef={planetsRef} />
       <canvas
         ref={canvasRef}
         className="orbit-canvas"

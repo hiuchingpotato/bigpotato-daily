@@ -2,6 +2,7 @@ import { bandForRank } from "../game/bands";
 import { MAX_RADIUS, radiusForRank } from "../game/geometry";
 import type { Guess } from "../game/types";
 import { Drifters } from "./drifters";
+import { StarField } from "./starfield";
 import { ShootingStars } from "./stars";
 import {
   ANSWER_GLOW_COLOUR,
@@ -192,6 +193,7 @@ class DustLayer {
 export class OrbitRenderer {
   private dust = new DustLayer();
   private stars = new ShootingStars();
+  private sky = new StarField();
   private drifters = new Drifters();
   readonly markers: MarkerSet;
 
@@ -205,6 +207,10 @@ export class OrbitRenderer {
 
     ctx.setTransform(viewport.dpr, 0, 0, viewport.dpr, 0, 0);
     ctx.clearRect(0, 0, viewport.width, viewport.height);
+
+    // The sky's doodles live on the board, behind everything, so they pan and
+    // zoom with the words instead of hovering over them.
+    this.sky.draw(ctx, input.camera, viewport);
 
     // Drawn first, so the word field composites over it: a drifting character
     // passes *behind* the words rather than across them. The dust layer is

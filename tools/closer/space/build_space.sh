@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Rebuild Closer's comic-style space backdrop (public/closer/space/) from the
-# Sling 'Em comic in assets/hub/. macOS only: crops with sips; the rest is
+# Rebuild Closer's comic-style planets (public/closer/space/) from the Sling 'Em
+# comic in assets/hub/. The white star doodles are drawn in code (plot/starfield.ts). macOS only: crops with sips; the rest is
 # standard-library Python.
 #
 #   ./tools/closer/space/build_space.sh
@@ -27,5 +27,4 @@ planet purple   126 126 466 438 "c:63:63:60"
 planet red       68  68 610 461 "c:34:34:31.5"
 planet earth     92  92 696 446 "c:39:51:34,c:74:16:11.5"
 
-python3 -I "$here/stars_svg.py" "$out/stars.svg"
 echo "space backdrop -> public/closer/space"
