@@ -111,9 +111,15 @@ body:has(.hub) {
     color: var(--hub-ink);
   }
 
+  .hub__actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
   .hub__board-link {
     display: inline-block;
-    margin-top: 14px;
     padding: 8px 22px;
     background: #fff;
     border: 3px solid var(--hub-outline);
@@ -441,13 +447,6 @@ body:has(.hub) {
   }
 
   /* ─── Streak & calendar page ─────────────────────────── */
-
-  .stats__kicker {
-    font-family: var(--hub-font-head);
-    font-size: 0.85rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
 
   .stats__tiles {
     display: grid;

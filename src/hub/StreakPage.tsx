@@ -3,9 +3,8 @@ import { closerHistory, type CloserHistory } from '../games/closer/summary'
 import { todayKey } from '../games/pizza/game/daily'
 import { pizzaHistory } from '../games/pizza/summary'
 import { Link } from '../Link'
+import { GameTabs, type GameId } from './GameTabs'
 import './hub.css'
-
-type GameId = 'pizza' | 'closer'
 
 /** How a day went, as the calendar colours it. */
 type Status = 'done' | 'late' | 'gaveup' | 'started' | 'missed' | 'today'
@@ -100,13 +99,24 @@ function closerView(h: CloserHistory, now: Date): View {
   }
 }
 
-function gameFromUrl(): GameId {
-  return new URLSearchParams(window.location.search).get('game') === 'closer' ? 'closer' : 'pizza'
+/** Every game's streak, quick stats and calendar, one tab each - like the leaderboard. */
+export function StreakPage() {
+  return (
+    <div className="hub">
+      <header className="hub__header hub__header--slim">
+        <Link to="home" className="hub__back" aria-label="All games">
+          ‹
+        </Link>
+        <h1 className="hub__page-title">Streak</h1>
+      </header>
+
+      <GameTabs id="streak" panes={{ pizza: <GameStats game="pizza" />, closer: <GameStats game="closer" /> }} />
+    </div>
+  )
 }
 
 /** One game's streak, quick stats and a calendar of every day since it launched. */
-export function StreakPage() {
-  const [game] = useState(gameFromUrl)
+function GameStats({ game }: { game: GameId }) {
   const [now] = useState(() => new Date())
   const [view, setView] = useState<View | null | 'error'>(() => (game === 'pizza' ? pizzaView(now) : null))
 
@@ -121,36 +131,20 @@ export function StreakPage() {
     }
   }, [game, now])
 
+  if (view === null) return <p className="hub__note">Loading…</p>
+  if (view === 'error') return <p className="hub__note">Couldn’t load your history.</p>
   return (
-    <div className="hub">
-      <header className="hub__header hub__header--slim">
-        <Link to="home" className="hub__back" aria-label="All games">
-          ‹
-        </Link>
-        <div>
-          <p className="stats__kicker">Streak &amp; calendar</p>
-          <h1 className="hub__page-title">{game === 'closer' ? 'Closer' : 'P for Pizza'}</h1>
-        </div>
-      </header>
-
-      {view === null ? (
-        <p className="hub__note">Loading…</p>
-      ) : view === 'error' ? (
-        <p className="hub__note">Couldn’t load your history.</p>
-      ) : (
-        <>
-          <section className="stats__tiles" aria-label="Quick stats">
-            {view.tiles.map((t) => (
-              <div key={t.label} className="stats__tile">
-                <span className="stats__value">{t.value}</span>
-                <span className="stats__label">{t.label}</span>
-              </div>
-            ))}
-          </section>
-          <Calendar view={view} route={game} />
-        </>
-      )}
-    </div>
+    <>
+      <section className="stats__tiles" aria-label={`${view.name} quick stats`}>
+        {view.tiles.map((t) => (
+          <div key={t.label} className="stats__tile">
+            <span className="stats__value">{t.value}</span>
+            <span className="stats__label">{t.label}</span>
+          </div>
+        ))}
+      </section>
+      <Calendar view={view} route={game} />
+    </>
   )
 }
 

@@ -69,9 +69,14 @@ export function Hub() {
           <br />
           Solve a puzzle every day, get better every day.
         </p>
-        <Link to="leaderboard" className="hub__board-link">
-          See leaderboard
-        </Link>
+        <div className="hub__actions">
+          <Link to="leaderboard" className="hub__board-link">
+            Leaderboard
+          </Link>
+          <Link to="stats" className="hub__board-link">
+            Streak
+          </Link>
+        </div>
       </header>
 
       <main className="hub__games">

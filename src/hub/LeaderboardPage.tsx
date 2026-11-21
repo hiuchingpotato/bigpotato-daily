@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatDuration } from '../games/closer/game/stats'
 import { demoPlayers as closerDemoPlayers, rankEntries, type CloserEntry } from '../games/closer/demoPlayers'
 import { closerSummary, type CloserSummary } from '../games/closer/summary'
@@ -7,54 +7,13 @@ import { leaderboard, type ScoreEntry } from '../games/pizza/lib/leaderboard'
 import { getPlayer } from '../games/pizza/lib/storage'
 import { Link } from '../Link'
 import type { Route } from '../router'
+import { GameTabs } from './GameTabs'
 import './hub.css'
-
-const GAMES = [
-  { id: 'pizza', name: 'P for Pizza' },
-  { id: 'closer', name: 'Closer' },
-] as const
-
-type GameId = (typeof GAMES)[number]['id']
-
-function initialGame(): GameId {
-  return new URLSearchParams(window.location.search).get('game') === 'closer' ? 'closer' : 'pizza'
-}
 
 const longDate = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 
 /** One board per game, side by side: tap a tab or swipe between them. */
 export function LeaderboardPage() {
-  const [active, setActive] = useState<GameId>(initialGame)
-  const panes = useRef<HTMLDivElement>(null)
-
-  const indexOf = (id: GameId) => GAMES.findIndex((g) => g.id === id)
-
-  // Open on the game in the URL without animating there.
-  useEffect(() => {
-    const el = panes.current
-    if (el) el.scrollLeft = indexOf(active) * el.clientWidth
-    // Only on mount; after that the scroll position drives the tab.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Keep the URL on the visible tab, so a shared or reloaded link opens the same board.
-  useEffect(() => {
-    window.history.replaceState(null, '', `?game=${active}`)
-  }, [active])
-
-  const show = (id: GameId) => {
-    setActive(id)
-    const el = panes.current
-    el?.scrollTo({ left: indexOf(id) * el.clientWidth, behavior: 'smooth' })
-  }
-
-  const onScroll = () => {
-    const el = panes.current
-    if (!el) return
-    const game = GAMES[Math.round(el.scrollLeft / el.clientWidth)]
-    if (game && game.id !== active) setActive(game.id)
-  }
-
   return (
     <div className="hub">
       <header className="hub__header hub__header--slim">
@@ -64,31 +23,7 @@ export function LeaderboardPage() {
         <h1 className="hub__page-title">Leaderboard</h1>
       </header>
 
-      <div className="lb-tabs" role="tablist" aria-label="Game">
-        {GAMES.map((g) => (
-          <button
-            key={g.id}
-            type="button"
-            role="tab"
-            id={`lb-tab-${g.id}`}
-            aria-controls={`lb-pane-${g.id}`}
-            aria-selected={active === g.id}
-            className={active === g.id ? 'lb-tab lb-tab--active' : 'lb-tab'}
-            onClick={() => show(g.id)}
-          >
-            {g.name}
-          </button>
-        ))}
-      </div>
-
-      <div className="lb-panes" ref={panes} onScroll={onScroll}>
-        <section className="lb-pane" role="tabpanel" id="lb-pane-pizza" aria-labelledby="lb-tab-pizza">
-          <PizzaBoard />
-        </section>
-        <section className="lb-pane" role="tabpanel" id="lb-pane-closer" aria-labelledby="lb-tab-closer">
-          <CloserBoard />
-        </section>
-      </div>
+      <GameTabs id="lb" panes={{ pizza: <PizzaBoard />, closer: <CloserBoard /> }} />
     </div>
   )
 }

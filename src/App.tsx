@@ -14,7 +14,7 @@ const TITLES: Record<Route, string> = {
   pizza: 'P for Pizza Daily',
   closer: 'Closer',
   leaderboard: 'Leaderboard · Big Potato Daily',
-  stats: 'Streak & calendar · Big Potato Daily',
+  stats: 'Streak · Big Potato Daily',
 }
 
 export default function App() {
