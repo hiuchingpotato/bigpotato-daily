@@ -86,6 +86,7 @@ export function Hub() {
             art="triangle-cards.jpg"
             name="P for Pizza"
             kicker="Cheesy letter game"
+            difficulty={1}
             blurb="Think quick, build a point-heavy pizza every day."
             number={pizza.puzzle}
             date={shortDate(now)}
@@ -115,6 +116,7 @@ export function Hub() {
             mascot
             name="Closer"
             kicker="Word-meaning game"
+            difficulty={4}
             blurb="Find the secret word by how close each guess is."
             number={closerOk?.today.puzzle ?? null}
             date={shortDate(now)}
@@ -173,6 +175,8 @@ interface TodayCardProps {
   mascot?: boolean
   name: string
   kicker: string
+  /** Out of 5. */
+  difficulty: number
   blurb: string
   number: number | null
   date: string
@@ -183,14 +187,17 @@ interface TodayCardProps {
   countdown: string
 }
 
-function TodayCard({ route, art, mascot, name, kicker, blurb, number, date, streak, result, played, countdown }: TodayCardProps) {
+function TodayCard({ route, art, mascot, name, kicker, difficulty, blurb, number, date, streak, result, played, countdown }: TodayCardProps) {
   return (
     <Link to={route} className={`card card--today card--${route}`}>
       <img className="art" src={`${import.meta.env.BASE_URL}hub/${art}`} alt="" />
       <div className="card__body">
         <div className="card__head">
           <h2>{name}</h2>
-          {number !== null ? <span className="card__num">#{number}</span> : null}
+          <span className="card__head-right">
+            <Difficulty stars={difficulty} />
+            {number !== null ? <span className="card__num">#{number}</span> : null}
+          </span>
         </div>
         <p className="card__kicker">{kicker}</p>
         <p className="card__blurb">{blurb}</p>
@@ -244,5 +251,18 @@ function MoreCard({ game }: { game: 'pizza' | 'closer' }) {
       </span>
       <span className="card__more-label">Streak &amp; calendar</span>
     </Link>
+  )
+}
+
+/** Difficulty out of five, as filled and empty stars. */
+function Difficulty({ stars }: { stars: number }) {
+  return (
+    <span className="card__difficulty" role="img" aria-label={`Difficulty ${stars} out of 5`} title={`Difficulty ${stars}/5`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} className={i < stars ? 'star star--on' : 'star'} aria-hidden="true">
+          ★
+        </span>
+      ))}
+    </span>
   )
 }

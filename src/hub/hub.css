@@ -293,6 +293,48 @@ body:has(.hub) {
     text-transform: uppercase;
   }
 
+  .card__head-right {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .card__difficulty {
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .card__head h2 {
+    white-space: nowrap;
+  }
+
+  /* Small phones: title, stars and number still share one line. */
+  @media (max-width: 359px) {
+    .card__head h2 {
+      font-size: 1.35rem;
+    }
+
+    .card__head-right {
+      gap: 5px;
+    }
+
+    .card__difficulty {
+      font-size: 0.72rem;
+      letter-spacing: 0;
+    }
+  }
+
+  .star {
+    color: #e0d6c6;
+    -webkit-text-stroke: 1px var(--hub-outline);
+  }
+
+  .star--on {
+    color: var(--hub-yellow);
+  }
+
   .card__blurb {
     margin-top: 2px;
     font-weight: 500;
