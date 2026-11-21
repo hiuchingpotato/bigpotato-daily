@@ -549,11 +549,9 @@ h2,
   touch-action: manipulation;
 }
 
+/* Straight under the third card, not pinned to the foot of the screen: the
+   keyboard then opens with the cards still in view above the box. */
 .answer {
-  margin-top: auto;
-  position: sticky;
-  bottom: 0;
-  background: var(--bg);
   padding-bottom: 8px;
 }
 
