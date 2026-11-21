@@ -76,22 +76,42 @@ body:has(.hub) {
     text-align: left;
   }
 
-  .arch-title svg {
+  .hub-logo svg {
     display: block;
     width: min(100%, 420px);
     margin: 0 auto;
     overflow: visible;
   }
 
-  .arch-title__line {
+  /* Lettering after the Christmas Advent Calendar banner. */
+  .hub-logo__line,
+  .hub-logo__insert {
     font-family: 'Chewy', 'Asap Condensed', system-ui, sans-serif;
-    fill: #fff;
     stroke: var(--hub-outline);
     stroke-width: 0.17em;
     stroke-linejoin: round;
     paint-order: stroke fill;
-    /* The banner's dark extrusion, down and slightly left. */
     filter: drop-shadow(-2px 5px 0 var(--hub-outline));
+  }
+
+  .hub-logo__line {
+    fill: #fff;
+  }
+
+  /* DAILY, written in like a proofreader's correction. */
+  .hub-logo__insert {
+    fill: var(--hub-accent);
+    font-size: 46px;
+    letter-spacing: 0.04em;
+  }
+
+  .hub-logo__caret {
+    fill: none;
+    stroke: var(--hub-accent);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(-1px 3px 0 var(--hub-outline));
   }
 
   .hub__page-title {

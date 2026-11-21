@@ -6,7 +6,7 @@ import { herdPastDays, herdToday, OUTCOME_LABEL, type HerdDay } from '../games/h
 import { pizzaPastDays, pizzaToday } from '../games/pizza/summary'
 import { Link } from '../Link'
 import type { Route } from '../router'
-import { ArchTitle } from './ArchTitle'
+import { HubLogo } from './HubLogo'
 import './hub.css'
 
 /** How many earlier puzzles each game's row offers. Older Closer puzzles stay in its calendar. */
@@ -61,13 +61,7 @@ export function Hub() {
   return (
     <div className="hub">
       <header className="hub__header">
-        <ArchTitle
-          label="Big Potato Daily Games"
-          lines={[
-            { text: 'BIG POTATO', size: 40, width: 210 },
-            { text: 'DAILY GAMES', size: 62, width: 330 },
-          ]}
-        />
+        <HubLogo />
         <p className="hub__tagline">
           Love our games? Make it a habit!
           <br />
