@@ -33,7 +33,9 @@ export default function App() {
         <div className="brand">
           <span className="brand__p">P</span>
           <span className="brand__rest">for Pizza</span>
-          <span className="brand__daily">Daily #{puzzle}</span>
+          <span className="brand__daily">
+            <span className="brand__daily-word">Daily </span>#{puzzle}
+          </span>
         </div>
         {screen !== 'play' ? (
           <button type="button" className="icon-btn" onClick={() => setShowBoard((v) => !v)} aria-expanded={showBoard}>

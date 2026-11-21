@@ -1,11 +1,13 @@
 {
-  "name": "P for Pizza Daily",
-  "short_name": "P for Pizza",
-  "description": "A new P for Pizza puzzle every day.",
-  "start_url": "/",
+  "name": "Big Potato Daily",
+  "short_name": "BP Daily",
+  "description": "Big Potato daily puzzles: P for Pizza and Closer. New puzzles every day at midnight.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#fff4d6",
+  "background_color": "#fbf6ee",
   "theme_color": "#e2372b",
-  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
 }

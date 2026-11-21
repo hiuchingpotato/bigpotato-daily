@@ -162,6 +162,7 @@ h2 {
   align-items: baseline;
   gap: 6px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .brand__p {
@@ -194,6 +195,25 @@ h2 {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Small phones: keep the top bar on one line by dropping the less useful words first. */
+@media (max-width: 379px) {
+  .topbar {
+    padding: 10px 12px;
+  }
+  .home-link {
+    margin-right: 4px;
+  }
+  .brand__daily-word {
+    display: none;
+  }
+}
+@media (max-width: 339px) {
+  .brand__daily {
+    display: none;
+  }
 }
 
 .screen {
