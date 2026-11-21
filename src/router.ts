@@ -4,9 +4,9 @@ import { useSyncExternalStore } from 'react'
 // slash) so the same build works at a domain root or a GitHub Pages project path.
 // Non-home routes keep a trailing slash: Closer's archive links are relative (`./`, `?puzzle=3`).
 
-export type Route = 'home' | 'pizza' | 'closer' | 'leaderboard' | 'stats'
+export type Route = 'home' | 'pizza' | 'closer' | 'herd' | 'leaderboard' | 'stats'
 
-const ROUTES: Route[] = ['pizza', 'closer', 'leaderboard', 'stats']
+const ROUTES: Route[] = ['pizza', 'closer', 'herd', 'leaderboard', 'stats']
 
 const BASE = import.meta.env.BASE_URL
 

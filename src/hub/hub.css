@@ -422,6 +422,19 @@ body:has(.hub) {
     border-color: #0b1020;
   }
 
+  .card--herd .card__play {
+    background: #e2399a;
+  }
+
+  /* The longest game name: a touch smaller so stars and number stay on the row. */
+  .card--herd .card__head h2 {
+    font-size: 1.25rem;
+
+    @media (max-width: 359px) {
+      font-size: 1.15rem;
+    }
+  }
+
   /* ─── Earlier days ───────────────────────────────────── */
 
   .card--past {

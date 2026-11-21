@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { closerHistory, type CloserHistory } from '../games/closer/summary'
+import { herdHistory } from '../games/herd/summary'
 import { todayKey } from '../games/pizza/game/daily'
 import { pizzaHistory } from '../games/pizza/summary'
 import { Link } from '../Link'
@@ -68,6 +69,32 @@ function pizzaView(now: Date): View {
   }
 }
 
+function herdView(now: Date): View {
+  const h = herdHistory(now)
+  const today = todayKey(now)
+  const days = new Map<string, DayCell>()
+  const mark = { herd: '🐄', pink: '🩷', between: '•' } as const
+  for (const d of h.days) {
+    const search = d.day === today ? '' : `day=${d.day}`
+    const detail = d.outcome ? mark[d.outcome] : undefined
+    const status: Status = d.answered ? (d.onTime ? 'done' : 'late') : d.day === today ? 'today' : 'missed'
+    days.set(d.day, { status, detail, search })
+  }
+  return {
+    name: 'Herd Mentality',
+    tiles: [
+      { label: 'Day streak', value: `🔥 ${h.streak}` },
+      // Herd has no points: the running total is how often you matched the herd.
+      { label: 'In the herd', value: plural(h.herds, 'time') },
+      { label: 'Pink cows', value: `${h.pinkCows}` },
+      { label: 'Best streak', value: plural(h.bestStreak, 'day') },
+    ],
+    first: h.days[0]?.day ?? today,
+    today,
+    days,
+  }
+}
+
 function closerView(h: CloserHistory, now: Date): View {
   const today = todayKey(now)
   const days = new Map<string, DayCell>()
@@ -110,7 +137,7 @@ export function StreakPage() {
         <h1 className="hub__page-title">Streak</h1>
       </header>
 
-      <GameTabs id="streak" panes={{ pizza: <GameStats game="pizza" />, closer: <GameStats game="closer" /> }} />
+      <GameTabs id="streak" panes={{ pizza: <GameStats game="pizza" />, closer: <GameStats game="closer" />, herd: <GameStats game="herd" /> }} />
     </div>
   )
 }
@@ -118,7 +145,7 @@ export function StreakPage() {
 /** One game's streak, quick stats and a calendar of every day since it launched. */
 function GameStats({ game }: { game: GameId }) {
   const [now] = useState(() => new Date())
-  const [view, setView] = useState<View | null | 'error'>(() => (game === 'pizza' ? pizzaView(now) : null))
+  const [view, setView] = useState<View | null | 'error'>(() => (game === 'pizza' ? pizzaView(now) : game === 'herd' ? herdView(now) : null))
 
   useEffect(() => {
     if (game !== 'closer') return
@@ -230,7 +257,7 @@ function Calendar({ view, route }: { view: View; route: GameId }) {
           ))}
       </ul>
       <p className="cal__note">
-        {route === 'closer' ? 'Numbers are guesses. ' : 'Numbers are points. '}Tap any day to play it; only days played on the day count towards your streak.
+        {route === 'closer' ? 'Numbers are guesses. ' : route === 'herd' ? '🐄 in the herd, 🩷 pink cow. ' : 'Numbers are points. '}Tap any day to play it; only days played on the day count towards your streak.
       </p>
     </section>
   )

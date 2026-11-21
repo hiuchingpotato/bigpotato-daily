@@ -8,11 +8,13 @@ import { useLocationKey, useRoute, type Route } from './router'
 // canvas renderer or P for Pizza's category lists.
 const PizzaApp = lazy(() => import('./games/pizza/App'))
 const CloserApp = lazy(() => import('./games/closer/App'))
+const HerdApp = lazy(() => import('./games/herd/App'))
 
 const TITLES: Record<Route, string> = {
   home: 'Big Potato Daily',
   pizza: 'P for Pizza Daily',
   closer: 'Closer',
+  herd: 'Herd Mentality',
   leaderboard: 'Leaderboard · Big Potato Daily',
   stats: 'Streak · Big Potato Daily',
 }
@@ -33,7 +35,7 @@ export default function App() {
   // The wrapper class is what each game's stylesheet is scoped to.
   return (
     <div className={`game-${route}`} key={locationKey}>
-      <Suspense fallback={null}>{route === 'pizza' ? <PizzaApp /> : <CloserApp />}</Suspense>
+      <Suspense fallback={null}>{route === 'pizza' ? <PizzaApp /> : route === 'herd' ? <HerdApp /> : <CloserApp />}</Suspense>
     </div>
   )
 }

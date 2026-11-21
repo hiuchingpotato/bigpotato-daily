@@ -1,23 +1,25 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
-const GAMES = [
+const ALL_GAMES = [
   { id: 'pizza', name: 'P for Pizza' },
   { id: 'closer', name: 'Closer' },
+  { id: 'herd', name: 'Herd' },
 ] as const
 
-export type GameId = (typeof GAMES)[number]['id']
-
-function initialGame(): GameId {
-  return new URLSearchParams(window.location.search).get('game') === 'closer' ? 'closer' : 'pizza'
-}
+export type GameId = (typeof ALL_GAMES)[number]['id']
 
 /**
  * A tab per game over panes laid side by side: tap a tab or swipe between them.
  * `?game=` opens on a game, and follows the visible one so a shared or reloaded
  * link lands on the same pane. Used by the leaderboard and streak pages.
  */
-export function GameTabs({ id, panes }: { id: string; panes: Record<GameId, ReactNode> }) {
-  const [active, setActive] = useState<GameId>(initialGame)
+export function GameTabs({ id, panes }: { id: string; panes: Partial<Record<GameId, ReactNode>> }) {
+  // Only the games this page has a pane for, e.g. no Herd leaderboard yet.
+  const GAMES = ALL_GAMES.filter((g) => g.id in panes)
+  const [active, setActive] = useState<GameId>(() => {
+    const asked = new URLSearchParams(window.location.search).get('game')
+    return GAMES.find((g) => g.id === asked)?.id ?? GAMES[0]!.id
+  })
   const ref = useRef<HTMLDivElement>(null)
 
   const indexOf = (game: GameId) => GAMES.findIndex((g) => g.id === game)

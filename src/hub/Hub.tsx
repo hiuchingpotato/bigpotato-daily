@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { formatDuration } from '../games/closer/game/stats'
 import { closerSummary, type CloserDay, type CloserSummary } from '../games/closer/summary'
 import { todayKey } from '../games/pizza/game/daily'
+import { herdPastDays, herdToday, OUTCOME_LABEL, type HerdDay } from '../games/herd/summary'
 import { pizzaPastDays, pizzaToday } from '../games/pizza/summary'
 import { Link } from '../Link'
 import type { Route } from '../router'
@@ -11,10 +12,9 @@ import './hub.css'
 /** How many earlier puzzles each game's row offers. Older Closer puzzles stay in its calendar. */
 const PAST_DAYS = 7
 
-/** Both games roll over at local midnight, so one countdown covers them. */
-function untilMidnight(now: Date): string {
-  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-  const s = Math.max(0, Math.floor((next.getTime() - now.getTime()) / 1000))
+/** Time left until `to`, as h:mm:ss. */
+function timeUntil(to: Date, now: Date): string {
+  const s = Math.max(0, Math.floor((to.getTime() - now.getTime()) / 1000))
   const hh = Math.floor(s / 3600)
   const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
   const ss = String(s % 60).padStart(2, '0')
@@ -51,8 +51,12 @@ export function Hub() {
     }
   }, [day])
 
-  const countdown = untilMidnight(now)
+  // Every game rolls over at local midnight, so one "next in" countdown covers them all.
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  const next: Action = { kind: 'countdown', label: 'Next in', value: timeUntil(midnight, now) }
   const closerOk = closer && closer !== 'error' ? closer : null
+  const herd = herdToday(now)
+  const herdPast = herdPastDays(PAST_DAYS, now)
 
   return (
     <div className="hub">
@@ -83,7 +87,7 @@ export function Hub() {
         <GameRow label="P for Pizza">
           <TodayCard
             route="pizza"
-            art="triangle-cards.jpg"
+            art="hub/triangle-cards.jpg"
             name="P for Pizza"
             kicker="Cheesy letter game"
             difficulty={1}
@@ -92,8 +96,7 @@ export function Hub() {
             date={shortDate(now)}
             streak={pizza.streak}
             result={pizza.status === 'done' ? `${pizza.score ?? 0} pts` : pizza.status === 'playing' ? 'In progress' : null}
-            played={pizza.status === 'done'}
-            countdown={countdown}
+            action={pizza.status === 'done' ? next : PLAY}
           />
           {pizzaPast.map((p) => (
             <PastCard
@@ -112,8 +115,8 @@ export function Hub() {
         <GameRow label="Closer">
           <TodayCard
             route="closer"
-            art="space.jpg"
-            mascot
+            art="hub/space.jpg"
+            mascot="hub/sausage.png"
             name="Closer"
             kicker="Word-meaning game"
             difficulty={4}
@@ -122,8 +125,7 @@ export function Hub() {
             date={shortDate(now)}
             streak={closerOk?.streak ?? null}
             result={closer === 'error' ? 'Couldn’t load today’s puzzle' : closerOk ? closerResult(closerOk.today) : null}
-            played={!!closerOk && ['solved', 'replayed', 'gaveup'].includes(closerOk.today.state)}
-            countdown={countdown}
+            action={closerOk && ['solved', 'replayed', 'gaveup'].includes(closerOk.today.state) ? next : PLAY}
           />
           {closerOk?.past.map((c) => (
             <PastCard
@@ -138,9 +140,48 @@ export function Hub() {
           ))}
           <MoreCard game="closer" />
         </GameRow>
+
+        <GameRow label="Herd Mentality">
+          <TodayCard
+            route="herd"
+            art="herd/cow-print-card.svg"
+            mascot="herd/pink-cow.png"
+            name="Herd Mentality"
+            kicker="Think like the herd"
+            difficulty={2}
+            blurb="One question a day: say what most people will say. Results at 11pm."
+            number={herd.puzzle}
+            date={shortDate(now)}
+            streak={herd.streak}
+            result={herd.outcome ? OUTCOME_LABEL[herd.outcome] : herd.answered ? 'Answer locked in' : null}
+            action={
+              // Play, then a countdown to the 11pm reveal once you've answered, then Reveal.
+              !herd.answered ? PLAY
+              : herd.revealed ? { kind: 'reveal' }
+              : { kind: 'countdown', label: 'Reveal in', value: timeUntil(herd.revealAt, now) }
+            }
+          />
+          {herdPast.map((h) => (
+            <PastCard
+              key={h.day}
+              route="herd"
+              search={`day=${h.day}`}
+              date={shortDate(dayDate(h.day))}
+              number={h.puzzle}
+              status={herdResult(h)}
+              done={h.answered}
+            />
+          ))}
+          <MoreCard game="herd" />
+        </GameRow>
       </main>
     </div>
   )
+}
+
+function herdResult(h: HerdDay): string {
+  if (!h.answered) return 'Not played'
+  return h.outcome ? OUTCOME_LABEL[h.outcome] : 'Answered'
 }
 
 function closerResult(c: CloserDay): string | null {
@@ -168,11 +209,17 @@ function GameRow({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
+/** What the card's button does: play, count down to something, or reveal results. */
+type Action = { kind: 'play' } | { kind: 'reveal' } | { kind: 'countdown'; label: string; value: string }
+
+const PLAY: Action = { kind: 'play' }
+
 interface TodayCardProps {
   route: Route
-  /** Background artwork in public/hub/. */
+  /** Background artwork, relative to public/. */
   art: string
-  mascot?: boolean
+  /** A character beside the button, relative to public/. */
+  mascot?: string
   name: string
   kicker: string
   /** Out of 5. */
@@ -183,14 +230,13 @@ interface TodayCardProps {
   streak: number | null
   /** Today's result once there is one, e.g. "120 pts". */
   result: string | null
-  played: boolean
-  countdown: string
+  action: Action
 }
 
-function TodayCard({ route, art, mascot, name, kicker, difficulty, blurb, number, date, streak, result, played, countdown }: TodayCardProps) {
+function TodayCard({ route, art, mascot, name, kicker, difficulty, blurb, number, date, streak, result, action }: TodayCardProps) {
   return (
     <Link to={route} className={`card card--today card--${route}`}>
-      <img className="art" src={`${import.meta.env.BASE_URL}hub/${art}`} alt="" />
+      <img className="art" src={`${import.meta.env.BASE_URL}${art}`} alt="" />
       <div className="card__body">
         <div className="card__head">
           <h2>{name}</h2>
@@ -208,13 +254,14 @@ function TodayCard({ route, art, mascot, name, kicker, difficulty, blurb, number
             {streak ? <span className="card__streak" title="Days in a row">🔥 {streak}</span> : null}
           </span>
           <span className="card__actions">
-            {mascot ? <img className="card__mascot" src={`${import.meta.env.BASE_URL}hub/sausage.png`} alt="" /> : null}
-            {played ? (
+            {/* Only beside a button: a countdown is wider and would push it over the date. */}
+            {mascot && action.kind !== 'countdown' ? <img className="card__mascot" src={`${import.meta.env.BASE_URL}${mascot}`} alt="" /> : null}
+            {action.kind === 'countdown' ? (
               <span className="card__countdown">
-                Next in <b>{countdown}</b>
+                {action.label} <b>{action.value}</b>
               </span>
             ) : (
-              <span className="card__play">Play</span>
+              <span className="card__play">{action.kind === 'reveal' ? 'Reveal' : 'Play'}</span>
             )}
           </span>
         </div>
@@ -243,7 +290,7 @@ function PastCard({ route, search, date, number, status, done }: PastCardProps) 
 }
 
 /** The last card in a row: opens that game's streak & calendar screen. */
-function MoreCard({ game }: { game: 'pizza' | 'closer' }) {
+function MoreCard({ game }: { game: 'pizza' | 'closer' | 'herd' }) {
   return (
     <Link to="stats" search={`game=${game}`} className="card card--past card--more">
       <span className="card__more-plus" aria-hidden="true">

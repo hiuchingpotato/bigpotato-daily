@@ -1,0 +1,435 @@
+/*
+ * Herd Mentality - visual system.
+ *
+ * Scoped so it only applies while this game is on screen: page-level rules match
+ * through :has(.game-herd) and the rest is nested under the game's wrapper element.
+ * White page, the pink cow's pink as the accent, Asap like the other games.
+ */
+
+:root:has(.game-herd) {
+  --herd-ink: #1a1a1a;
+  --herd-soft: #6b6370;
+  --herd-line: #ece6ee;
+  --herd-pink: #e2399a;
+  --herd-pink-soft: #fde3f1;
+  --herd-grass: #b9e28c;
+  --herd-grass-deep: #8cc75a;
+  --font-body: 'Asap', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Asap Condensed', 'Asap', system-ui, sans-serif;
+  color-scheme: light;
+}
+
+body:has(.game-herd) {
+  background: #fff;
+  color: var(--herd-ink);
+  font-family: var(--font-body);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.game-herd {
+  h1,
+  h2,
+  p {
+    margin: 0;
+  }
+
+  .herd {
+    max-width: 520px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px);
+  }
+
+  /* ─── Top bar ───────────────────────────────────────── */
+
+  .herd__top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  .herd__home {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    color: inherit;
+    font-size: 1.5rem;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .herd__brand {
+    margin-right: auto;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.2rem;
+    white-space: nowrap;
+  }
+
+  .herd__num {
+    color: var(--herd-soft);
+    font-size: 0.9rem;
+  }
+
+  /* How many of the herd have answered, top-right. */
+  .herd__count {
+    padding: 4px 10px;
+    border: 2px solid var(--herd-ink);
+    border-radius: 999px;
+    background: var(--herd-pink-soft);
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .herd__past {
+    margin: 0 -16px 8px;
+    padding: 8px 16px;
+    background: var(--herd-pink-soft);
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  .herd__past-link {
+    color: var(--herd-pink);
+    font-weight: 700;
+  }
+
+  /* ─── The herd ──────────────────────────────────────── */
+
+  .herd-scene {
+    position: relative;
+    height: clamp(190px, 52vw, 250px);
+    margin: 4px 0 16px;
+  }
+
+  /* A soft hill for them to stand on. */
+  .herd-scene::before {
+    content: '';
+    position: absolute;
+    left: -6%;
+    right: -6%;
+    bottom: 0;
+    height: 38%;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    background: linear-gradient(var(--herd-grass), var(--herd-grass-deep));
+  }
+
+  .herd-scene__cow,
+  .herd-scene__pink {
+    position: absolute;
+    height: auto;
+  }
+
+  /* Back row smaller and higher, front row larger, some facing the other way. */
+  .herd-scene__cow--1 { width: 30%; left: 2%; bottom: 30%; z-index: 1; }
+  .herd-scene__cow--2 { width: 28%; left: 26%; bottom: 36%; z-index: 0; transform: scaleX(-1); }
+  .herd-scene__cow--3 { width: 28%; right: 22%; bottom: 36%; z-index: 0; }
+  .herd-scene__cow--4 { width: 31%; right: 0; bottom: 29%; z-index: 1; transform: scaleX(-1); }
+  .herd-scene__cow--5 { width: 30%; left: 12%; bottom: 8%; z-index: 2; }
+  .herd-scene__pink { width: 46%; left: 38%; bottom: 2%; z-index: 3; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.15)); }
+
+  .herd__prompt {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.75rem;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .herd__prompt--small {
+    font-size: 1.35rem;
+    margin: 8px 0 14px;
+  }
+
+  /* ─── Answering ─────────────────────────────────────── */
+
+  .herd__form,
+  .herd__confirm,
+  .herd__locked {
+    margin-top: 18px;
+  }
+
+  .herd__row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .herd__form input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 2px solid var(--herd-ink);
+    border-radius: 12px;
+    font: inherit;
+    font-size: 1.05rem;
+  }
+
+  .herd__form input:focus {
+    outline: 3px solid var(--herd-pink-soft);
+    border-color: var(--herd-pink);
+  }
+
+  .herd__btn {
+    flex: none;
+    padding: 12px 18px;
+    border: 2px solid var(--herd-ink);
+    border-radius: 12px;
+    background: var(--herd-pink);
+    box-shadow: 0 3px 0 var(--herd-ink);
+    color: #fff;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .herd__btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .herd__btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--herd-ink);
+  }
+
+  .herd__btn--ghost {
+    background: #fff;
+    color: var(--herd-ink);
+  }
+
+  .herd__btn--reveal {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    font-size: 1.3rem;
+  }
+
+  .herd__btn--home {
+    display: block;
+    margin-top: 20px;
+    background: #fff;
+    color: var(--herd-ink);
+  }
+
+  .herd__warn {
+    margin-top: 10px;
+    color: var(--herd-soft);
+    font-size: 0.88rem;
+    text-align: center;
+  }
+
+  .herd__confirm {
+    padding: 14px;
+    border: 2px solid var(--herd-ink);
+    border-radius: 14px;
+    background: var(--herd-pink-soft);
+    text-align: center;
+
+    .herd__row {
+      justify-content: center;
+      margin-top: 12px;
+    }
+  }
+
+  .herd__locked {
+    padding: 16px;
+    border: 2px solid var(--herd-ink);
+    border-radius: 14px;
+    text-align: center;
+  }
+
+  .herd__your {
+    color: var(--herd-soft);
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .herd__answer {
+    margin-top: 2px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.6rem;
+  }
+
+  .herd__wait {
+    margin-top: 10px;
+    color: var(--herd-soft);
+  }
+
+  .herd__timer {
+    display: block;
+    color: var(--herd-ink);
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ─── Results ───────────────────────────────────────── */
+
+  .herd-verdict {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border: 2px solid var(--herd-ink);
+    border-radius: 16px;
+    box-shadow: 0 3px 0 var(--herd-ink);
+
+    h2 {
+      font-family: var(--font-head);
+      font-size: 1.4rem;
+    }
+  }
+
+  .herd-verdict--herd {
+    background: #e7f6dc;
+  }
+
+  .herd-verdict--pink {
+    background: var(--herd-pink-soft);
+  }
+
+  .herd-verdict--between {
+    background: #f3f1f4;
+  }
+
+  .herd-verdict__cow {
+    flex: none;
+    width: 84px;
+  }
+
+  .herd-verdict__you {
+    margin-top: 6px;
+    font-size: 0.92rem;
+  }
+
+  .herd-picks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .herd-pick {
+    padding: 12px;
+    border: 2px solid var(--herd-ink);
+    border-radius: 14px;
+  }
+
+  .herd-pick--pink {
+    background: var(--herd-pink-soft);
+  }
+
+  .herd-pick__label {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .herd-pick__answer {
+    margin-top: 4px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.3rem;
+    line-height: 1.1;
+  }
+
+  .herd-pick__meta {
+    margin-top: 4px;
+    color: var(--herd-soft);
+    font-size: 0.82rem;
+  }
+
+  .herd-top {
+    margin-top: 16px;
+
+    h2 {
+      font-family: var(--font-head);
+      font-size: 1.15rem;
+      margin-bottom: 6px;
+    }
+
+    ol {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+  }
+
+  .herd-top__row {
+    display: grid;
+    grid-template-columns: 1.4rem minmax(0, 1fr) 30% 1.8rem;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 4px;
+    border-top: 1px solid var(--herd-line);
+  }
+
+  .herd-top__row--you {
+    background: var(--herd-pink-soft);
+    border-radius: 8px;
+    font-weight: 700;
+  }
+
+  .herd-top__rank {
+    color: var(--herd-soft);
+    font-family: var(--font-head);
+    font-weight: 700;
+  }
+
+  .herd-top__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .herd-top__tag {
+    margin-left: 6px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--herd-pink);
+    color: #fff;
+    font-size: 0.72rem;
+  }
+
+  .herd-top__bar {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--herd-line);
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: var(--herd-ink);
+    }
+  }
+
+  .herd-top__row--you .herd-top__bar span {
+    background: var(--herd-pink);
+  }
+
+  .herd-top__count {
+    text-align: right;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+}
