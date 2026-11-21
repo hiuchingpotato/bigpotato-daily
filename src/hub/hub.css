@@ -84,9 +84,9 @@ body:has(.hub) {
   }
 
   /* Lettering after the Christmas Advent Calendar banner. */
-  .hub-logo__line,
-  .hub-logo__insert {
+  .hub-logo__line {
     font-family: 'Chewy', 'Asap Condensed', system-ui, sans-serif;
+    fill: #fff;
     stroke: var(--hub-outline);
     stroke-width: 0.17em;
     stroke-linejoin: round;
@@ -94,24 +94,43 @@ body:has(.hub) {
     filter: drop-shadow(-2px 5px 0 var(--hub-outline));
   }
 
-  .hub-logo__line {
+  /* DAILY, rubber-stamped across the end of the name. */
+  .hub-logo__stamp {
+    filter: drop-shadow(-2px 4px 0 var(--hub-outline));
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hub-stamp 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) 0.25s both;
+  }
+
+  .hub-logo__stamp-body {
+    fill: var(--hub-accent);
+    stroke: var(--hub-outline);
+    stroke-width: 4;
+  }
+
+  .hub-logo__stamp-rule {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.5;
+    stroke-dasharray: 7 4;
+    stroke-linecap: round;
+  }
+
+  .hub-logo__stamp-star {
     fill: #fff;
   }
 
-  /* DAILY, written in like a proofreader's correction. */
-  .hub-logo__insert {
-    fill: var(--hub-accent);
-    font-size: 46px;
-    letter-spacing: 0.04em;
+  .hub-logo__stamp-text {
+    font-family: 'Chewy', 'Asap Condensed', system-ui, sans-serif;
+    font-size: 31px;
+    letter-spacing: 0.08em;
+    fill: #fff;
   }
 
-  .hub-logo__caret {
-    fill: none;
-    stroke: var(--hub-accent);
-    stroke-width: 6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    filter: drop-shadow(-1px 3px 0 var(--hub-outline));
+  @media (prefers-reduced-motion: reduce) {
+    .hub-logo__stamp {
+      animation: none;
+    }
   }
 
   .hub__page-title {
@@ -126,7 +145,7 @@ body:has(.hub) {
   }
 
   .hub__tagline {
-    margin-top: 10px;
+    margin-top: 16px;
     font-size: 1rem;
     color: var(--hub-ink);
   }
@@ -867,4 +886,11 @@ body:has(.hub) {
     text-align: center;
     text-decoration: none;
   }
+}
+
+/* The stamp comes down hard and settles. */
+@keyframes hub-stamp {
+  0% { opacity: 0; transform: scale(1.6) rotate(6deg); }
+  60% { opacity: 1; transform: scale(0.94) rotate(-1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
 }
