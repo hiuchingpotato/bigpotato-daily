@@ -6,7 +6,8 @@
  */
 
 :root:has(.game-pizza) {
-  --bg: #fff4d6;
+  /* White to start; other page colours are still to try. */
+  --bg: #ffffff;
   --surface: #ffffff;
   --surface-2: #fff9ea;
   --ink: #2a1a0e;
@@ -16,8 +17,6 @@
   --brand-ink: #ffffff;
   --cheese: #ffc933;
   --timer: #ffc933;
-  --crust: #c98a3e;
-  --crust-dark: #9c6428;
   --easy: #3fae4f;
   --easy-soft: #dff3e1;
   --medium: #f4b400;
@@ -28,54 +27,6 @@
   --shadow: 0 2px 0 rgba(42, 26, 14, 0.12);
   --radius: 14px;
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:has(.game-pizza):not([data-theme='light']) {
-    --bg: #1c140e;
-    --surface: #2a1f16;
-    --surface-2: #33261b;
-    --ink: #fbeedb;
-    --ink-soft: #c9b397;
-    --line: #4a3727;
-    --brand: #ff5a4b;
-    --cheese: #ffcf4a;
-    --timer: #7a5a12;
-    --crust: #d59a4f;
-    --crust-dark: #a8712f;
-    --easy: #52c463;
-    --easy-soft: #1f3a23;
-    --medium: #ffc21f;
-    --medium-soft: #3d3114;
-    --hard: #ff5a4b;
-    --hard-soft: #45201c;
-    --dough: #3b2d20;
-    --shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
-    color-scheme: dark;
-  }
-}
-
-:root:has(.game-pizza)[data-theme='dark'] {
-  --bg: #1c140e;
-  --surface: #2a1f16;
-  --surface-2: #33261b;
-  --ink: #fbeedb;
-  --ink-soft: #c9b397;
-  --line: #4a3727;
-  --brand: #ff5a4b;
-  --cheese: #ffcf4a;
-  --timer: #7a5a12;
-  --crust: #d59a4f;
-  --crust-dark: #a8712f;
-  --easy: #52c463;
-  --easy-soft: #1f3a23;
-  --medium: #ffc21f;
-  --medium-soft: #3d3114;
-  --hard: #ff5a4b;
-  --hard-soft: #45201c;
-  --dough: #3b2d20;
-  --shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
-  color-scheme: dark;
 }
 
 body:has(.game-pizza) {
@@ -325,58 +276,87 @@ h2 {
   margin: 0 auto;
 }
 
-.tri polygon {
-  stroke: var(--bg);
-  stroke-width: 4;
+.tri__card {
   stroke-linejoin: round;
   transition: fill 0.2s;
 }
 
-.tri text {
-  font-weight: 700;
-  font-size: 26px;
-  fill: #fff;
-  pointer-events: none;
-}
-
-.tri--empty polygon {
+/* Empty slots, tinted by what they accept: red only at the top, yellow or red in the middle. */
+.tri--empty .tri__card {
   fill: var(--dough);
+  stroke: var(--line);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
 }
 
-.tri--need-top polygon {
+.tri--need-top .tri__card {
   fill: var(--hard-soft);
 }
 
-.tri--need-middle polygon {
+.tri--need-middle .tri__card {
   fill: var(--medium-soft);
 }
 
-.tri--green polygon {
-  fill: var(--easy);
+/* Won slots look like P for Pizza letter cards: yellow, outlined, with a few toppings. */
+.tri--won .tri__card {
+  fill: url(#pizza-card);
+  stroke: #1a1a1a;
+  stroke-width: 2.5;
 }
 
-.tri--yellow polygon {
-  fill: var(--medium);
+/* The card's difficulty, as a thin inner edge, since the slot rules depend on it. */
+.tri__edge {
+  fill: none;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  opacity: 0.85;
 }
 
-.tri--yellow text {
-  fill: #3a2a00;
+.tri--green .tri__edge {
+  stroke: var(--easy);
 }
 
-.tri--red polygon {
-  fill: var(--hard);
+.tri--yellow .tri__edge {
+  stroke: #e0a100;
+}
+
+.tri--red .tri__edge {
+  stroke: var(--hard);
+}
+
+.tri__letter {
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 30px;
+  fill: #2a1a0e;
+  pointer-events: none;
+}
+
+.topping {
+  stroke: #1a1a1a;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.topping--leaf {
+  fill: #5cb85c;
+}
+
+.topping__vein {
+  fill: none;
+  stroke: #2f7d32;
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+.topping--mushroom {
+  fill: #f3e3c6;
 }
 
 .tri--fresh {
   transform-box: fill-box;
   transform-origin: center;
   animation: pop 0.35s ease-out;
-}
-
-.crust {
-  fill: var(--crust);
-  stroke: var(--crust-dark);
-  stroke-width: 2;
 }
 
 /* ─── Intro ────────────────────────────────────────────── */
