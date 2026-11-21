@@ -26,13 +26,17 @@
   --dough: #f6e7c4;
   --shadow: 0 2px 0 rgba(42, 26, 14, 0.12);
   --radius: 14px;
+  /* Same type as the home page: Asap for reading, Asap Condensed Bold for anything
+     that labels, counts or asks to be tapped. */
+  --font-body: 'Asap', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Asap Condensed', 'Asap', system-ui, sans-serif;
   color-scheme: light;
 }
 
 body:has(.game-pizza) {
   background: var(--bg);
   color: var(--ink);
-  font-family: 'Fredoka', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
@@ -62,6 +66,22 @@ h1 {
 h2 {
   font-size: 1.1rem;
   font-weight: 600;
+}
+
+h1,
+h2,
+.brand,
+.btn,
+.icon-btn,
+.scorebar,
+.timer,
+.prompt__letter,
+.prompt__category,
+.prompt__skip,
+.total__num,
+.breakdown dd,
+.answer__feedback {
+  font-family: var(--font-head);
 }
 
 .muted {
@@ -325,7 +345,7 @@ h2 {
 }
 
 .tri__letter {
-  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-family: var(--font-head);
   font-weight: 700;
   font-size: 30px;
   fill: #2a1a0e;
