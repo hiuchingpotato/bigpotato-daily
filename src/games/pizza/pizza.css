@@ -463,6 +463,66 @@ h2,
   max-width: min(260px, 32dvh);
 }
 
+/* While playing, the app fills exactly the visible area (see useVisualViewport) and the
+   pizza takes whatever height is left, so with the keyboard up it shrinks rather than
+   being scrolled off the top. */
+.app--playing {
+  position: fixed;
+  left: 0;
+  right: 0;
+  min-height: 0;
+  overflow: hidden;
+
+  .play {
+    min-height: 0;
+    gap: 10px;
+  }
+
+  .play__slice {
+    flex: 1 1 0;
+    min-height: 48px;
+    max-height: 260px;
+    width: 100%;
+    max-width: none;
+  }
+
+  .prompts,
+  .answer,
+  .scorebar {
+    flex: none;
+  }
+}
+
+/* Keyboard up: drop the header and slim the cards so the pizza keeps some size. */
+.app--typing {
+  .topbar {
+    display: none;
+  }
+
+  .play {
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  .prompts {
+    gap: 6px;
+  }
+
+  .prompt {
+    padding: 4px 8px;
+  }
+
+  .prompt__letter {
+    width: 34px;
+    height: 34px;
+    font-size: 1.25rem;
+  }
+
+  .prompt__meta {
+    display: none;
+  }
+}
+
 .prompts {
   display: grid;
   gap: 8px;

@@ -12,6 +12,32 @@ import { getPlayer, getStats, recordResult, setPlayerName, type Player } from '.
 import { Link } from '../../Link'
 import './pizza.css'
 
+/**
+ * The part of the screen the player can actually see: on phones this shrinks when the
+ * keyboard opens, and iOS also pans it. Falls back to the window where the browser
+ * doesn't report it.
+ */
+function useVisualViewport(): { top: number; height: number } {
+  const read = () => {
+    const vv = window.visualViewport
+    return vv ? { top: vv.offsetTop, height: vv.height } : { top: 0, height: window.innerHeight }
+  }
+  const [vp, setVp] = useState(read)
+  useEffect(() => {
+    const vv = window.visualViewport
+    const update = () => setVp(read())
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
+    window.addEventListener('resize', update)
+    return () => {
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [])
+  return vp
+}
+
 export default function App() {
   // The day is fixed for the session, so a game started at 23:59 finishes as that day's game.
   // ?day= opens a past puzzle instead: same cards, but no leaderboard and no streak.
@@ -24,9 +50,17 @@ export default function App() {
 
   const { state } = game
   const screen = state.finished ? 'done' : state.startedAt === null ? 'intro' : 'play'
+  const viewport = useVisualViewport()
+  const [typing, setTyping] = useState(false)
+  const playing = screen === 'play'
 
   return (
-    <div className="app">
+    // While playing, the app is pinned to exactly the visible area, so when the keyboard
+    // opens the pizza shrinks to fit rather than the page scrolling it out of sight.
+    <div
+      className={`app${playing ? ' app--playing' : ''}${playing && typing ? ' app--typing' : ''}`}
+      style={playing ? { top: viewport.top, height: viewport.height } : undefined}
+    >
       <header className="topbar">
         <Link to="home" className="home-link" aria-label="All games">
           ‹
@@ -52,7 +86,7 @@ export default function App() {
       {screen === 'intro' ? (
         <Intro player={player} isPast={isPast} onName={(n) => setPlayer(setPlayerName(n))} onStart={game.start} />
       ) : screen === 'play' ? (
-        <Play game={game} />
+        <Play game={game} onTyping={setTyping} />
       ) : (
         <Done game={game} dayKey={dayKey} isPast={isPast} puzzle={puzzle} player={player} onName={(n) => setPlayer(setPlayerName(n))} />
       )}
@@ -135,7 +169,7 @@ function Intro({ player, isPast, onName, onStart }: { player: Player; isPast: bo
 
 type Feedback = { kind: 'ok' | 'bad'; text: string; id: number } | null
 
-function Play({ game }: { game: Game }) {
+function Play({ game, onTyping }: { game: Game; onTyping: (typing: boolean) => void }) {
   const { state, visiblePrompts, timeLeft, submit, skip, end } = game
   const [value, setValue] = useState('')
   const [feedback, setFeedback] = useState<Feedback>(null)
@@ -216,7 +250,11 @@ function Play({ game }: { game: Game }) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Type an answer…"
-            onFocus={() => (typing.current = true)}
+            onFocus={() => {
+              typing.current = true
+              onTyping(true)
+            }}
+            onBlur={() => onTyping(false)}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
