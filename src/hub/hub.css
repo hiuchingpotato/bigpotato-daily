@@ -2,8 +2,9 @@
  * The home page and the leaderboard page. Scoped like the games: variables apply only
  * while .hub is mounted.
  *
- * Look: the whole screen is the Christmas Advent Calendar orange, with its lettering
- * (Chewy on an arch, outlined and shadowed) for the title. Text is Asap: Asap Condensed
+ * Look: the screen is the Christmas Advent Calendar orange, with a header band in the
+ * yellow of the P for Pizza triangle cards and the advent lettering (Chewy on an arch,
+ * outlined and shadowed) for the title. Cards are white. Text is Asap: Asap Condensed
  * Bold for headings, labels and buttons, Asap Bold for body copy. Cards have the thick
  * dark outline and hard shadow of Big Potato's comic artwork. One palette for light and
  * dark mode for now: the orange is the brand moment, and other colours are still to test.
@@ -11,7 +12,8 @@
 
 :root:has(.hub) {
   --hub-bg: #fca11d;
-  --hub-surface: #fff8ec;
+  --hub-yellow: #fadf45;
+  --hub-surface: #ffffff;
   --hub-ink: #1a1a1a;
   --hub-ink-soft: #5a3a1c;
   --hub-line: #f0dcc0;
@@ -59,7 +61,10 @@ body:has(.hub) {
   /* ─── Header ─────────────────────────────────────────── */
 
   .hub__header {
-    padding: calc(env(safe-area-inset-top) + 18px) 0 22px;
+    margin: 0 -16px 22px;
+    padding: calc(env(safe-area-inset-top) + 18px) 16px 22px;
+    background: var(--hub-yellow);
+    border-bottom: 3px solid var(--hub-outline);
     text-align: center;
   }
 
@@ -241,17 +246,14 @@ body:has(.hub) {
     margin: 96px 12px 12px;
     padding: 12px 14px;
     border-radius: 12px;
-    background: rgba(255, 250, 238, 0.95);
+    background: var(--hub-surface);
     border: 2px solid var(--hub-outline);
-    color: #1d1712;
+    color: var(--hub-ink);
   }
 
   .card--closer .card__body {
     /* Leave the sausage most of its corner. */
     margin-right: 50px;
-    background: rgba(11, 16, 32, 0.78);
-    border-color: rgba(146, 170, 214, 0.35);
-    color: #e8eefb;
   }
 
   .card__head {
@@ -291,10 +293,6 @@ body:has(.hub) {
     margin-top: 8px;
     font-weight: 700;
     color: var(--hub-done);
-  }
-
-  .card--closer .card__result {
-    color: #8fe3a2;
   }
 
   .card__foot {
@@ -361,14 +359,9 @@ body:has(.hub) {
     padding: 14px 12px;
   }
 
-  .card--pizza-past {
-    background: #ffe28a;
-    color: #2a1a0e;
-  }
-
-  .card--closer-past {
-    background: #1b2448;
-    color: #e8eefb;
+  .card--past {
+    background: var(--hub-surface);
+    color: var(--hub-ink);
   }
 
   .card__past-date {
@@ -392,10 +385,6 @@ body:has(.hub) {
   .card__past-status--done {
     opacity: 1;
     color: var(--hub-done);
-  }
-
-  .card--closer-past .card__past-status--done {
-    color: #8fe3a2;
   }
 
   /* ─── Leaderboard page ───────────────────────────────── */
