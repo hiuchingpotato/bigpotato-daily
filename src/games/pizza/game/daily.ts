@@ -22,6 +22,25 @@ export function todayKey(now = new Date()): string {
   return `${y}-${m}-${d}`
 }
 
+/** The `count` days before `dayKey`, most recent first, never before launch. */
+export function previousDayKeys(dayKey: string, count: number): string[] {
+  const days: string[] = []
+  let d = dayKey
+  while (days.length < count) {
+    d = yesterdayKey(d)
+    if (d < LAUNCH_DAY) break
+    days.push(d)
+  }
+  return days
+}
+
+/** `?day=YYYY-MM-DD` for a past puzzle. Anything else (bad, future, pre-launch) means today. */
+export function requestedDay(search: string, today: string): string | null {
+  const day = new URLSearchParams(search).get('day')
+  if (!day || !/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(Date.parse(day))) return null
+  return day >= LAUNCH_DAY && day < today ? day : null
+}
+
 export function yesterdayKey(dayKey: string): string {
   const d = new Date(`${dayKey}T12:00:00`)
   d.setDate(d.getDate() - 1)

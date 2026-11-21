@@ -3,7 +3,7 @@ import { Countdown } from './components/Countdown'
 import { Leaderboard } from './components/Leaderboard'
 import { PizzaSlice } from './components/PizzaSlice'
 import { PromptCard } from './components/PromptCard'
-import { puzzleNumber, todayKey, yesterdayKey } from './game/daily'
+import { puzzleNumber, requestedDay, todayKey, yesterdayKey } from './game/daily'
 import { share, shareText, sliceCode } from './game/share'
 import { isComplete, POINTS, ROUND_SECONDS, score, SKIP_PENALTY_SECONDS, slotFor } from './game/slice'
 import { TIMER_ENABLED, UNLIMITED_PLAYS } from './config'
@@ -15,7 +15,10 @@ import './pizza.css'
 
 export default function App() {
   // The day is fixed for the session, so a game started at 23:59 finishes as that day's game.
-  const [dayKey] = useState(() => todayKey())
+  // ?day= opens a past puzzle instead: same cards, but no leaderboard and no streak.
+  const [today] = useState(() => todayKey())
+  const [dayKey] = useState(() => requestedDay(window.location.search, today) ?? today)
+  const isPast = dayKey !== today
   const puzzle = puzzleNumber(dayKey)
   const game = useDailyGame(dayKey)
   const [player, setPlayer] = useState<Player>(getPlayer)
@@ -37,23 +40,32 @@ export default function App() {
             <span className="brand__daily-word">Daily </span>#{puzzle}
           </span>
         </div>
-        {screen !== 'play' ? (
+        {screen !== 'play' && !isPast ? (
           <button type="button" className="icon-btn" onClick={() => setShowBoard((v) => !v)} aria-expanded={showBoard}>
             {showBoard ? 'Close' : 'Leaderboard'}
           </button>
         ) : null}
       </header>
 
+      {isPast && screen !== 'play' ? (
+        <p className="past-flag">
+          Past puzzle · {pastLabel(dayKey)} ·{' '}
+          <Link to="pizza" className="past-flag__link">
+            back to today
+          </Link>
+        </p>
+      ) : null}
+
       {showBoard && screen !== 'play' ? (
         <main className="screen">
           <Leaderboard day={dayKey} playerId={player.id} />
         </main>
       ) : screen === 'intro' ? (
-        <Intro player={player} onName={(n) => setPlayer(setPlayerName(n))} onStart={game.start} />
+        <Intro player={player} isPast={isPast} onName={(n) => setPlayer(setPlayerName(n))} onStart={game.start} />
       ) : screen === 'play' ? (
         <Play game={game} />
       ) : (
-        <Done game={game} dayKey={dayKey} puzzle={puzzle} player={player} onName={(n) => setPlayer(setPlayerName(n))} />
+        <Done game={game} dayKey={dayKey} isPast={isPast} puzzle={puzzle} player={player} onName={(n) => setPlayer(setPlayerName(n))} />
       )}
     </div>
   )
@@ -61,13 +73,17 @@ export default function App() {
 
 type Game = ReturnType<typeof useDailyGame>
 
-function Intro({ player, onName, onStart }: { player: Player; onName: (n: string) => void; onStart: () => void }) {
+function pastLabel(dayKey: string): string {
+  return new Date(`${dayKey}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
+function Intro({ player, isPast, onName, onStart }: { player: Player; isPast: boolean; onName: (n: string) => void; onStart: () => void }) {
   const [name, setName] = useState(player.name)
   const stats = getStats()
   return (
     <main className="screen intro">
       <PizzaSlice slice={Array(9).fill(null)} className="intro__slice" />
-      <h1>Build today’s biggest slice</h1>
+      <h1>{isPast ? 'Build that day’s biggest slice' : 'Build today’s biggest slice'}</h1>
       <ol className="rules">
         <li>
           Three cards are on the table. Each one pairs a <b>category</b> with a <b>letter</b>.
@@ -96,17 +112,19 @@ function Intro({ player, onName, onStart }: { player: Player; onName: (n: string
             : 'Finish the slice for a bonus. Skipping a card is free.'}
         </div>
       </div>
-      <label className="field">
-        <span>Your name on the leaderboard</span>
-        <input
-          value={name}
-          maxLength={16}
-          placeholder="e.g. Cheesy Pete"
-          autoComplete="nickname"
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => onName(name)}
-        />
-      </label>
+      {isPast ? null : (
+        <label className="field">
+          <span>Your name on the leaderboard</span>
+          <input
+            value={name}
+            maxLength={16}
+            placeholder="e.g. Cheesy Pete"
+            autoComplete="nickname"
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => onName(name)}
+          />
+        </label>
+      )}
       <button
         type="button"
         className="btn btn--primary"
@@ -221,7 +239,7 @@ function Play({ game }: { game: Game }) {
   )
 }
 
-function Done({ game, dayKey, puzzle, player, onName }: { game: Game; dayKey: string; puzzle: number; player: Player; onName: (n: string) => void }) {
+function Done({ game, dayKey, isPast, puzzle, player, onName }: { game: Game; dayKey: string; isPast: boolean; puzzle: number; player: Player; onName: (n: string) => void }) {
   const { state } = game
   const final = score(state.slice, state.secondsLeftAtFinish)
   const complete = isComplete(state.slice)
@@ -229,11 +247,12 @@ function Done({ game, dayKey, puzzle, player, onName }: { game: Game; dayKey: st
   const [submitted, setSubmitted] = useState(false)
   const [refresh, setRefresh] = useState(0)
   const [shareMsg, setShareMsg] = useState('')
-  const [stats] = useState(() => recordResult(dayKey, final.total, yesterdayKey(dayKey)))
+  // A past puzzle is practice: it can't build a streak or change the day's score.
+  const [stats] = useState(() => (isPast ? getStats() : recordResult(dayKey, final.total, yesterdayKey(dayKey))))
 
   const submitScore = async (n: string) => {
-    // Replays are for practice; only the day's first game goes on the leaderboard.
-    if (!n.trim() || state.round > 0) return
+    // Replays and past puzzles are for practice; only the day's first game goes on the leaderboard.
+    if (!n.trim() || state.round > 0 || isPast) return
     await leaderboard
       .submit({
         day: dayKey,
@@ -288,7 +307,7 @@ function Done({ game, dayKey, puzzle, player, onName }: { game: Game; dayKey: st
       ) : null}
       {shareMsg ? <p className="muted">{shareMsg}</p> : null}
 
-      {!submitted && state.round === 0 ? (
+      {!submitted && state.round === 0 && !isPast ? (
         <form
           className="field field--inline"
           onSubmit={(e) => {
@@ -305,7 +324,7 @@ function Done({ game, dayKey, puzzle, player, onName }: { game: Game; dayKey: st
         </form>
       ) : null}
 
-      <Leaderboard day={dayKey} playerId={player.id} refreshKey={refresh} />
+      {isPast ? null : <Leaderboard day={dayKey} playerId={player.id} refreshKey={refresh} />}
 
       {won.length ? (
         <section className="answers">

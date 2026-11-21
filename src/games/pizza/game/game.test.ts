@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CATEGORIES } from './categories'
-import { DECK_SIZE, generateDeck, puzzleNumber, VISIBLE_PROMPTS } from './daily'
+import { DECK_SIZE, generateDeck, LAUNCH_DAY, previousDayKeys, puzzleNumber, requestedDay, VISIBLE_PROMPTS } from './daily'
 import { emptySlice, isComplete, MAX_SCORE, place, score, slotFor } from './slice'
 import type { Difficulty, Prompt, WonTriangle } from './types'
 import { answersForLetter, matchAnswer, normalise } from './validate'
@@ -94,5 +94,22 @@ describe('slice', () => {
     expect(score(s, 40).total).toBe(9 * 30 + 50 + 40)
     expect(score(place(emptySlice(), tri('green')), 40).total).toBe(10)
     expect(MAX_SCORE).toBe(470)
+  })
+})
+
+describe('past days', () => {
+  it('lists the days before, most recent first, stopping at launch', () => {
+    expect(previousDayKeys('2026-11-03', 3)).toEqual(['2026-11-02', '2026-11-01', '2026-10-31'])
+    expect(previousDayKeys('2026-10-02', 7)).toEqual(['2026-10-01', LAUNCH_DAY])
+  })
+
+  it('only accepts a real past day from the query string', () => {
+    const today = '2026-11-21'
+    expect(requestedDay('?day=2026-11-20', today)).toBe('2026-11-20')
+    expect(requestedDay('?day=2026-11-21', today)).toBeNull()
+    expect(requestedDay('?day=2026-12-01', today)).toBeNull()
+    expect(requestedDay('?day=2026-09-01', today)).toBeNull()
+    expect(requestedDay('?day=nonsense', today)).toBeNull()
+    expect(requestedDay('', today)).toBeNull()
   })
 })

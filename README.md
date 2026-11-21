@@ -5,7 +5,7 @@ Big Potato's daily puzzles in one mobile-first web app (React + TypeScript + Vit
 - **P for Pizza** at `/pizza/` — match letters to categories and build the biggest slice. See [docs/pizza.md](docs/pizza.md).
 - **Closer** at `/closer/` — guess the secret word; every guess shows how close you are in meaning. See [docs/closer.md](docs/closer.md).
 
-The home page at `/` shows each game's puzzle for today, whether you've played it, your streak, today's P for Pizza top 5, and a countdown to the next puzzles. Both games roll over at the player's local midnight.
+The home page at `/` has one row per game: today's card (puzzle number, your result and streak, and a countdown once you've played) followed by the previous 7 days to swipe through. `/leaderboard/` has today's P for Pizza board. Both games roll over at the player's local midnight; past days open as `/pizza/?day=YYYY-MM-DD` and `/closer/?puzzle=N`, and never count towards the leaderboard or a streak.
 
 The two games were merged from their own repos (`p-for-pizza-daily` and `semantle_bp`) with `git subtree`, so `git log` still has their history.
 
@@ -30,7 +30,7 @@ Without the data, the home page shows "Couldn’t load today’s puzzle" for Clo
 
 ## How it fits together
 
-- **Routing.** `src/router.ts` maps `/`, `/pizza/` and `/closer/` (under `BASE_URL`) to the hub or a game, with no router library. Game routes keep a trailing slash because Closer's archive links are relative (`./`, `?puzzle=3`). Each game is lazy-loaded, so the home page doesn't download either game.
+- **Routing.** `src/router.ts` maps `/`, `/pizza/`, `/closer/` and `/leaderboard/` (under `BASE_URL`) to a screen, with no router library. A game remounts when its query changes, since it reads its puzzle from the URL on mount. Game routes keep a trailing slash because Closer's archive links are relative (`./`, `?puzzle=3`). Each game is lazy-loaded, so the home page doesn't download either game.
 - **Styles.** Each stylesheet is scoped to its own screen. Page-level rules (CSS variables, `body`) match through `:root:has(.game-pizza)` / `:root:has(.game-closer)` / `:root:has(.hub)`, and everything else is nested under the wrapper class. The games use the same variable names for different things (`--ink` is Closer's background and P for Pizza's text), so don't move them back to a bare `:root`.
 - **Home page data.** Each game has a `summary.ts` that reads its own saved data: P for Pizza from localStorage (`pfp:*`), Closer from IndexedDB (`closer/v2/*`). Each game shows its streak by its own rules. Closer's data still never leaves the device.
 
@@ -41,7 +41,7 @@ src/
   main.tsx, App.tsx    entry point and route switch
   router.ts, Link.tsx  the tiny router
   shell.css            page basics shared by every screen
-  hub/                 the home page
+  hub/                 the home page, the leaderboard page, and the card artwork (art.tsx)
   games/pizza/         P for Pizza (app, game logic, Supabase leaderboard, summary.ts)
   games/closer/        Closer (app, game logic, canvas board, summary.ts)
 public/closer/         Closer's marker art, and its built data (gitignored)

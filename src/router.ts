@@ -1,21 +1,25 @@
 import { useSyncExternalStore } from 'react'
 
-// Three routes, so no router library. Paths sit under BASE_URL (which always ends in a
+// A handful of routes, so no router library. Paths sit under BASE_URL (which always ends in a
 // slash) so the same build works at a domain root or a GitHub Pages project path.
-// Game routes keep a trailing slash: Closer's archive links are relative (`./`, `?puzzle=3`).
+// Non-home routes keep a trailing slash: Closer's archive links are relative (`./`, `?puzzle=3`).
 
-export type Route = 'home' | 'pizza' | 'closer'
+export type Route = 'home' | 'pizza' | 'closer' | 'leaderboard'
+
+const ROUTES: Route[] = ['pizza', 'closer', 'leaderboard']
 
 const BASE = import.meta.env.BASE_URL
 
 export function routeFor(pathname: string): Route {
   const rest = pathname.startsWith(BASE) ? pathname.slice(BASE.length) : pathname.replace(/^\//, '')
   const first = rest.split('/')[0]
-  return first === 'pizza' || first === 'closer' ? first : 'home'
+  return ROUTES.find((r) => r === first) ?? 'home'
 }
 
-export function hrefFor(route: Route): string {
-  return route === 'home' ? BASE : `${BASE}${route}/`
+/** `search` is a query string without the `?`, e.g. `day=2026-11-20`. */
+export function hrefFor(route: Route, search = ''): string {
+  const path = route === 'home' ? BASE : `${BASE}${route}/`
+  return search ? `${path}?${search}` : path
 }
 
 /** `/pizza` → `/pizza/`, so relative links inside a game resolve against it. */
@@ -36,8 +40,13 @@ export function useRoute(): Route {
   return useSyncExternalStore(subscribe, () => routeFor(window.location.pathname))
 }
 
-export function navigate(route: Route): void {
-  window.history.pushState(null, '', hrefFor(route))
+/** Changes whenever the path or query does, e.g. switching from today's puzzle to a past one. */
+export function useLocationKey(): string {
+  return useSyncExternalStore(subscribe, () => window.location.pathname + window.location.search)
+}
+
+export function navigate(route: Route, search = ''): void {
+  window.history.pushState(null, '', hrefFor(route, search))
   window.dispatchEvent(new PopStateEvent('popstate'))
   window.scrollTo(0, 0)
 }
