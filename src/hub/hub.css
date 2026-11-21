@@ -389,6 +389,74 @@ body:has(.hub) {
 
   /* ─── Leaderboard page ───────────────────────────────── */
 
+  .lb-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    padding: 4px;
+    background: var(--hub-surface);
+    border: 3px solid var(--hub-outline);
+    border-radius: 999px;
+    box-shadow: 0 3px 0 var(--hub-outline);
+  }
+
+  .lb-tab {
+    flex: 1;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--hub-ink);
+    font-family: var(--hub-font-head);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .lb-tab--active {
+    background: var(--hub-yellow);
+    box-shadow: inset 0 0 0 2px var(--hub-outline);
+  }
+
+  /* Both boards side by side; swipe or tap a tab to move between them. */
+  .lb-panes {
+    display: flex;
+    margin: 0 -16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .lb-panes::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lb-pane {
+    flex: 0 0 100%;
+    padding: 0 16px 8px;
+    scroll-snap-align: start;
+  }
+
+  .board__cols {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px 4px;
+    color: var(--hub-ink-soft);
+    font-family: var(--hub-font-head);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .board__detail {
+    display: block;
+    color: var(--hub-ink-soft);
+    font-weight: 500;
+    font-size: 0.8rem;
+  }
+
   .board {
     padding: 18px;
     background: var(--hub-surface);
@@ -464,6 +532,10 @@ body:has(.hub) {
 
   .board__score {
     font-variant-numeric: tabular-nums;
+  }
+
+  .board__play.board__play--closer {
+    background: var(--hub-closer);
   }
 
   .board__play {

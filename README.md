@@ -5,7 +5,7 @@ Big Potato's daily puzzles in one mobile-first web app (React + TypeScript + Vit
 - **P for Pizza** at `/pizza/` — match letters to categories and build the biggest slice. See [docs/pizza.md](docs/pizza.md).
 - **Closer** at `/closer/` — guess the secret word; every guess shows how close you are in meaning. See [docs/closer.md](docs/closer.md).
 
-The home page at `/` has one row per game: today's card (puzzle number, your result and streak, and a countdown once you've played) followed by the previous 7 days to swipe through. `/leaderboard/` has today's P for Pizza board. Both games roll over at the player's local midnight; past days open as `/pizza/?day=YYYY-MM-DD` and `/closer/?puzzle=N`, and never count towards the leaderboard or a streak.
+The home page at `/` has one row per game: today's card (puzzle number, your result and streak, and a countdown once you've played) followed by the previous 7 days to swipe through. `/leaderboard/` holds every game's board for today, one tab per game (tap or swipe; `?game=closer` opens Closer's). The games themselves no longer show a leaderboard. Closer's tab ranks your solve against demo players by fewest guesses, since Closer results don't leave the device yet. Both games roll over at the player's local midnight; past days open as `/pizza/?day=YYYY-MM-DD` and `/closer/?puzzle=N`, and never count towards the leaderboard or a streak.
 
 The two games were merged from their own repos (`p-for-pizza-daily` and `semantle_bp`) with `git subtree`, so `git log` still has their history.
 

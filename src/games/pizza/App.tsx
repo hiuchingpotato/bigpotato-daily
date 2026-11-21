@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Countdown } from './components/Countdown'
-import { Leaderboard } from './components/Leaderboard'
 import { PizzaSlice } from './components/PizzaSlice'
 import { PromptCard } from './components/PromptCard'
 import { puzzleNumber, requestedDay, todayKey, yesterdayKey } from './game/daily'
@@ -22,7 +21,6 @@ export default function App() {
   const puzzle = puzzleNumber(dayKey)
   const game = useDailyGame(dayKey)
   const [player, setPlayer] = useState<Player>(getPlayer)
-  const [showBoard, setShowBoard] = useState(false)
 
   const { state } = game
   const screen = state.finished ? 'done' : state.startedAt === null ? 'intro' : 'play'
@@ -40,11 +38,6 @@ export default function App() {
             <span className="brand__daily-word">Daily </span>#{puzzle}
           </span>
         </div>
-        {screen !== 'play' && !isPast ? (
-          <button type="button" className="icon-btn" onClick={() => setShowBoard((v) => !v)} aria-expanded={showBoard}>
-            {showBoard ? 'Close' : 'Leaderboard'}
-          </button>
-        ) : null}
       </header>
 
       {isPast && screen !== 'play' ? (
@@ -56,11 +49,7 @@ export default function App() {
         </p>
       ) : null}
 
-      {showBoard && screen !== 'play' ? (
-        <main className="screen">
-          <Leaderboard day={dayKey} playerId={player.id} />
-        </main>
-      ) : screen === 'intro' ? (
+      {screen === 'intro' ? (
         <Intro player={player} isPast={isPast} onName={(n) => setPlayer(setPlayerName(n))} onStart={game.start} />
       ) : screen === 'play' ? (
         <Play game={game} />
@@ -245,7 +234,6 @@ function Done({ game, dayKey, isPast, puzzle, player, onName }: { game: Game; da
   const complete = isComplete(state.slice)
   const [name, setName] = useState(player.name)
   const [submitted, setSubmitted] = useState(false)
-  const [refresh, setRefresh] = useState(0)
   const [shareMsg, setShareMsg] = useState('')
   // A past puzzle is practice: it can't build a streak or change the day's score.
   const [stats] = useState(() => (isPast ? getStats() : recordResult(dayKey, final.total, yesterdayKey(dayKey))))
@@ -264,7 +252,6 @@ function Done({ game, dayKey, isPast, puzzle, player, onName }: { game: Game; da
       })
       .catch(() => {})
     setSubmitted(true)
-    setRefresh((r) => r + 1)
   }
 
   // Submit automatically if we already know who they are.
@@ -324,7 +311,12 @@ function Done({ game, dayKey, isPast, puzzle, player, onName }: { game: Game; da
         </form>
       ) : null}
 
-      {isPast ? null : <Leaderboard day={dayKey} playerId={player.id} refreshKey={refresh} />}
+      {/* The board itself lives on the shared leaderboard page, with every game's tab. */}
+      {isPast ? null : (
+        <Link to="leaderboard" search="game=pizza" className="btn btn--board">
+          See how you compare
+        </Link>
+      )}
 
       {won.length ? (
         <section className="answers">
