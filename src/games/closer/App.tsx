@@ -84,6 +84,18 @@ export default function App() {
         </button>
       </header>
 
+      {/* Top-right of the board, well away from the guess box and the thumb, so
+          it's always there but never pressed by accident. */}
+      {!game.solved && (
+        <button
+          type="button"
+          className="button-ghost button-giveup"
+          onClick={() => setConfirmGiveUp(true)}
+        >
+          Give up
+        </button>
+      )}
+
       <main className="rail" aria-label="Your words">
         <div className="rail-scroll">
           {game.solved && (
@@ -107,7 +119,6 @@ export default function App() {
               hint={game.hint}
               onSubmit={game.submitGuess}
               onHint={game.takeHint}
-              onGiveUp={() => setConfirmGiveUp(true)}
             />
           )}
 

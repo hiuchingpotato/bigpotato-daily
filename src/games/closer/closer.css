@@ -1366,12 +1366,23 @@ button:disabled {
   line-height: 1;
 }
 
-/* Give up sits at the far end of the hint row, pushed away from the buttons
-   that help. */
+/* Give up sits in the board's top-right corner, out of the thumb's reach and
+   away from the buttons that help. */
 
 .button-giveup {
-  margin-left: auto;
-  flex-shrink: 0;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--ink-raised);
+  backdrop-filter: blur(10px);
+  touch-action: pan-x pan-y;
+}
+
+/* On wide screens the rail covers the right of the board. */
+@media (min-width: 901px) {
+  .button-giveup {
+    right: calc(var(--rail-width) + 1rem);
+  }
 }
 
 .button-danger {
