@@ -40,7 +40,7 @@ Without the data, the home page shows "Couldn’t load today’s puzzle" for Clo
 - **Prompts** live in `src/games/herd/prompts.ts`, one per line with the answers a crowd gives and roughly how often (`Name a famous river.|Thames/river thames:32|Nile:26|...`). There are 240; a fixed shuffle runs through them all before repeating, a new one each midnight from launch (14 November 2026).
 - **The AI herd** is 28–52 cow-named players a day, each picking an answer in proportion to those weights, seeded by the day so every device sees the same herd. They "answer" through the day, so the counter climbs, and are all in by the 11pm reveal.
 - **Your answer** is locked once per day (localStorage `herd:answers`) and matched to the prompt's answers forgivingly (case, "the", plurals, aliases, small typos). In the herd = you share the most common answer; pink cow = nobody else said it. Answers made after 11pm, or on past days, still reveal but don't build a streak.
-- `tools/herd/cow_print.py` regenerates the card's cow-print background; the cows are cut from the FigJam assets in `assets/hub/bp-herd-*.png`.
+- `tools/herd/cow_print.py` regenerates the card's cow-print background; `tools/herd/cutout.py` trims the FigJam exports and cuts the cow heads off their white card. The cows, cow heads and grass hill come from the FigJam assets in `assets/hub/bp-herd-*.png`. On the game screen the pink cow snorts every 5 seconds and each herd cow hops or shuffles at its own random pace (off for reduced motion).
 
 ## Project layout
 

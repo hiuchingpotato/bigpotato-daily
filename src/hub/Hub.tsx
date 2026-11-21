@@ -148,7 +148,7 @@ export function Hub() {
             mascot="herd/pink-cow.png"
             name="Herd Mentality"
             kicker="Think like the herd"
-            difficulty={2}
+            difficulty={0}
             blurb="One question a day: say what most people will say. Results at 11pm."
             number={herd.puzzle}
             date={shortDate(now)}
@@ -254,11 +254,13 @@ function TodayCard({ route, art, mascot, name, kicker, difficulty, blurb, number
             {streak ? <span className="card__streak" title="Days in a row">🔥 {streak}</span> : null}
           </span>
           <span className="card__actions">
-            {/* Only beside a button: a countdown is wider and would push it over the date. */}
-            {mascot && action.kind !== 'countdown' ? <img className="card__mascot" src={`${import.meta.env.BASE_URL}${mascot}`} alt="" /> : null}
+            {mascot ? <img className="card__mascot" src={`${import.meta.env.BASE_URL}${mascot}`} alt="" /> : null}
             {action.kind === 'countdown' ? (
+              // Label stacked over the time, so it's no wider than a button and the
+              // mascot beside it stays clear of the date.
               <span className="card__countdown">
-                {action.label} <b>{action.value}</b>
+                <span>{action.label}</span>
+                <b>{action.value}</b>
               </span>
             ) : (
               <span className="card__play">{action.kind === 'reveal' ? 'Reveal' : 'Play'}</span>

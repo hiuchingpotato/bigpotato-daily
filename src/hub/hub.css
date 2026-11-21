@@ -260,7 +260,8 @@ body:has(.hub) {
     /* Every game's panel is the same size: a fixed layout with room for a result line. */
     display: flex;
     flex-direction: column;
-    min-height: 188px;
+    /* Tall enough for the busiest state: a result line plus a streak under the date. */
+    min-height: 196px;
     border-radius: 12px;
     background: var(--hub-surface);
     border: 2px solid var(--hub-outline);
@@ -366,12 +367,14 @@ body:has(.hub) {
     font-size: 0.82rem;
   }
 
+  /* Date with the streak chip under it, so the left side stays narrow and the
+     mascot beside the button never covers it. */
   .card__date {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     white-space: nowrap;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
+    gap: 2px;
     opacity: 0.85;
   }
 
@@ -390,10 +393,20 @@ body:has(.hub) {
   }
 
   .card__countdown {
-    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.1;
     white-space: nowrap;
 
+    span {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+
     b {
+      font-family: var(--hub-font-head);
+      font-size: 1.05rem;
       font-variant-numeric: tabular-nums;
     }
   }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
 import { Link } from '../../Link'
 import {
   answeredCount,
@@ -57,7 +57,8 @@ export default function App() {
           Herd Mentality <span className="herd__num">#{puzzleNumber(day)}</span>
         </div>
         <span className="herd__count" title="Players who have answered today's prompt">
-          🐄 {answeredCount(day, now, !!entry)} answered
+          <img src={`${BASE}cow-head.png`} alt="" className="herd__count-cow" />
+          {answeredCount(day, now, !!entry)} answered
         </span>
       </header>
 
@@ -103,16 +104,45 @@ export default function App() {
   )
 }
 
-/** The pink cow out front, with five of the herd behind, overlapping like a real field. */
+/** Which cow art each of the five herd spots uses, and whether it faces the other way. */
+const HERD = [
+  { art: 'cow-2', flip: false },
+  { art: 'cow-5', flip: true },
+  { art: 'cow-3', flip: false },
+  { art: 'cow-1', flip: true },
+  { art: 'cow-6', flip: false },
+] as const
+
+/** A random hop or shuffle for each cow, so the herd never moves in step. */
+function randomMotion(): CSSProperties {
+  const hop = Math.random() < 0.6
+  return {
+    animationName: hop ? 'herd-hop' : 'herd-shuffle',
+    animationDuration: `${(hop ? 1.6 : 1.1) + Math.random() * 1.8}s`,
+    animationDelay: `${-Math.random() * 3}s`,
+  } as CSSProperties
+}
+
+/**
+ * The pink cow out front, snorting every few seconds, with five of the herd behind
+ * on the hill - overlapping, some facing the other way, each hopping or shuffling
+ * to its own random rhythm.
+ */
 function CowScene() {
+  const [motions] = useState(() => HERD.map(randomMotion))
   return (
     <div className="herd-scene" aria-hidden="true">
-      <img className="herd-scene__cow herd-scene__cow--1" src={`${BASE}cow-2.png`} alt="" />
-      <img className="herd-scene__cow herd-scene__cow--2" src={`${BASE}cow-5.png`} alt="" />
-      <img className="herd-scene__cow herd-scene__cow--3" src={`${BASE}cow-3.png`} alt="" />
-      <img className="herd-scene__cow herd-scene__cow--4" src={`${BASE}cow-1.png`} alt="" />
-      <img className="herd-scene__cow herd-scene__cow--5" src={`${BASE}cow-6.png`} alt="" />
-      <img className="herd-scene__pink" src={`${BASE}pink-cow.png`} alt="" />
+      <img className="herd-scene__hill" src={`${BASE}grass.png`} alt="" />
+      {HERD.map((cow, i) => (
+        <span key={i} className={`herd-scene__cow herd-scene__cow--${i + 1}`} style={motions[i]}>
+          <img src={`${BASE}${cow.art}.png`} alt="" className={cow.flip ? 'is-flipped' : undefined} />
+        </span>
+      ))}
+      <span className="herd-scene__pink">
+        <img src={`${BASE}pink-cow.png`} alt="" />
+        <span className="herd-scene__puff herd-scene__puff--1" />
+        <span className="herd-scene__puff herd-scene__puff--2" />
+      </span>
     </div>
   )
 }

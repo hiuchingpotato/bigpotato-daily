@@ -42,10 +42,11 @@ def place(count, rmin, rmax, gap):
     return out
 
 
-# Busy on purpose: lots of mid-sized patches packed close, a scatter of pink.
-black = place(110, 8, 26, 3)
-pink = place(18, 7, 15, 3)
-dots = place(70, 2.5, 5, 2)
+# Real cow print: a handful of big patches, a couple running off the edges, with
+# a few smaller ones and a pink patch or two between them.
+black = place(7, 55, 95, 14) + place(6, 22, 38, 12)
+pink = place(3, 20, 34, 12)
+dots = place(8, 6, 12, 10)
 
 svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid slice">
 <rect width="{W}" height="{H}" fill="#fff"/>
