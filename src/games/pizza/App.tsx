@@ -141,6 +141,9 @@ function Play({ game }: { game: Game }) {
   const [feedback, setFeedback] = useState<Feedback>(null)
   const [freshSlot, setFreshSlot] = useState<number | undefined>()
   const inputRef = useRef<HTMLInputElement>(null)
+  // The keyboard stays down until the player taps the answer box, so the first thing
+  // they see is the cards. After that, keep it up between answers and skips.
+  const typing = useRef(false)
   const prevSlice = useRef(state.slice)
 
   useEffect(() => {
@@ -197,7 +200,7 @@ function Play({ game }: { game: Game }) {
             noRoom={p ? slotFor(state.slice, p.difficulty) === -1 : false}
             onSkip={() => {
               skip(pos)
-              inputRef.current?.focus()
+              if (typing.current) inputRef.current?.focus()
             }}
           />
         ))}
@@ -213,7 +216,7 @@ function Play({ game }: { game: Game }) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Type an answer…"
-            autoFocus
+            onFocus={() => (typing.current = true)}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
