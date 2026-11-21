@@ -3,13 +3,10 @@ import { useState } from "react";
 import { useGame } from "./game/useGame";
 import OrbitField from "./plot/OrbitField";
 import AboutModal from "./ui/AboutModal";
-import Calendar from "./ui/Calendar";
 import ConfirmModal from "./ui/ConfirmModal";
 import GuessForm from "./ui/GuessForm";
 import GuessList from "./ui/GuessList";
 import SolvedPanel from "./ui/SolvedPanel";
-import StatsButton from "./ui/StatsButton";
-import StatsModal from "./ui/StatsModal";
 import WinModal from "./ui/WinModal";
 import { usePageZoomGuard } from "./ui/usePageZoomGuard";
 import { Link } from "../../Link";
@@ -116,16 +113,7 @@ export default function App() {
 
           <GuessList guesses={game.guesses} focus={game.focus} />
 
-          <StatsButton stats={game.stats} onOpen={game.openStats} />
-
-          {game.manifest && (
-            <Calendar
-              epoch={game.manifest.epoch}
-              todayNumber={game.todayNumber}
-              activeNumber={game.puzzle.number}
-              stats={game.statsRecord}
-            />
-          )}
+          {/* Statistics, the streak and past puzzles live on the home page now. */}
         </div>
       </main>
 
@@ -153,10 +141,6 @@ export default function App() {
           }}
           onCancel={() => setConfirmGiveUp(false)}
         />
-      )}
-
-      {game.showStats && (
-        <StatsModal stats={game.stats} onClose={game.dismissStats} />
       )}
 
       {game.showAbout && (
