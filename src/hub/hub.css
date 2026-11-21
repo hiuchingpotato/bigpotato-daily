@@ -478,13 +478,10 @@ body:has(.hub) {
     background: #e2399a;
   }
 
-  /* The longest game name: a touch smaller so stars and number stay on the row. */
-  .card--herd .card__head h2 {
-    font-size: 1.25rem;
-
-    @media (max-width: 359px) {
-      font-size: 1.15rem;
-    }
+  /* The longest game name, at the same size as the others: stars and number drop under it when the row is too narrow. */
+  .card--herd .card__head {
+    flex-wrap: wrap;
+    row-gap: 2px;
   }
 
   /* ─── Earlier days ───────────────────────────────────── */
