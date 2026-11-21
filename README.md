@@ -41,14 +41,16 @@ src/
   main.tsx, App.tsx    entry point and route switch
   router.ts, Link.tsx  the tiny router
   shell.css            page basics shared by every screen
-  hub/                 the home page, the leaderboard page, and the card artwork (art.tsx)
+  hub/                 the home page, the leaderboard page and the arched title
   games/pizza/         P for Pizza (app, game logic, Supabase leaderboard, summary.ts)
   games/closer/        Closer (app, game logic, canvas board, summary.ts)
 public/closer/         Closer's marker art, and its built data (gitignored)
+public/hub/            web-sized card artwork for the home page
 supabase/migrations/   P for Pizza leaderboard schema
 tools/closer/          Closer's data pipeline (Python) and git hooks
 scripts/closer/        Closer's preview renderers
 assets/closer/         Closer's source artwork
+assets/hub/            Big Potato source artwork for the home page (from the Daily Games FigJam)
 docs/                  each game's original README
 ```
 

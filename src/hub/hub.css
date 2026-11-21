@@ -2,46 +2,36 @@
  * The home page and the leaderboard page. Scoped like the games: variables apply only
  * while .hub is mounted.
  *
- * Look: an advent-calendar style banner (chunky outlined lettering on orange), then one
- * row per game - today's card with its artwork, and earlier days to swipe through. Cards
- * have the thick dark outline and hard shadow of Big Potato's comic artwork.
+ * Look: the whole screen is the Christmas Advent Calendar orange, with its lettering
+ * (Chewy on an arch, outlined and shadowed) for the title. Text is Asap: Asap Condensed
+ * Bold for headings, labels and buttons, Asap Bold for body copy. Cards have the thick
+ * dark outline and hard shadow of Big Potato's comic artwork. One palette for light and
+ * dark mode for now: the orange is the brand moment, and other colours are still to test.
  */
 
 :root:has(.hub) {
-  --hub-bg: #fbf6ee;
-  --hub-surface: #ffffff;
-  --hub-ink: #1d1712;
-  --hub-ink-soft: #6d6257;
-  --hub-line: #eadfce;
-  --hub-outline: #2a1a0e;
-  --hub-banner: #f7931e;
-  --hub-banner-deep: #8a4b2a;
+  --hub-bg: #fca11d;
+  --hub-surface: #fff8ec;
+  --hub-ink: #1a1a1a;
+  --hub-ink-soft: #5a3a1c;
+  --hub-line: #f0dcc0;
+  --hub-outline: #1a1a1a;
+  --hub-mantel: #99522b;
   --hub-accent: #e2372b;
   --hub-pizza: #e2372b;
   --hub-closer: #3f6fd8;
   --hub-done: #2f8f43;
+  --hub-font-head: 'Asap Condensed', 'Asap', system-ui, sans-serif;
+  --hub-font-body: 'Asap', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:has(.hub) {
-    --hub-bg: #15110d;
-    --hub-surface: #211a14;
-    --hub-ink: #f6ece0;
-    --hub-ink-soft: #b5a796;
-    --hub-line: #3a2e23;
-    --hub-outline: #050302;
-    --hub-accent: #ff5a4b;
-    --hub-done: #5ccb72;
-    color-scheme: dark;
-  }
 }
 
 body:has(.hub) {
   background: var(--hub-bg);
   color: var(--hub-ink);
-  font-family: 'Fredoka', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  line-height: 1.4;
+  font-family: var(--hub-font-body);
+  font-weight: 700;
+  line-height: 1.35;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -57,54 +47,63 @@ body:has(.hub) {
     margin: 0;
   }
 
-  /* ─── Banner ─────────────────────────────────────────── */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ─── Header ─────────────────────────────────────────── */
 
   .hub__header {
-    margin: 0 -16px 20px;
-    padding: calc(env(safe-area-inset-top) + 22px) 16px 20px;
-    background: var(--hub-banner);
-    border-bottom: 10px solid var(--hub-banner-deep);
+    padding: calc(env(safe-area-inset-top) + 18px) 0 22px;
     text-align: center;
-    color: #3b1d0e;
   }
 
   .hub__header--slim {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding-bottom: 14px;
+    gap: 10px;
+    padding-bottom: 16px;
     text-align: left;
   }
 
-  .hub__title {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: 'Luckiest Guy', 'Fredoka', system-ui, sans-serif;
-    font-weight: 400;
-    line-height: 0.95;
-    letter-spacing: 0.02em;
-    color: #fff;
-    -webkit-text-stroke: 7px #3b1d0e;
-    paint-order: stroke fill;
-    text-shadow: 0 5px 0 #3b1d0e;
-
-    span:first-child {
-      font-size: 1.6rem;
-    }
-    span:last-child {
-      font-size: 2.6rem;
-    }
+  .arch-title svg {
+    display: block;
+    width: min(100%, 420px);
+    margin: 0 auto;
+    overflow: visible;
   }
 
-  .hub__title--small {
-    font-size: 2rem;
+  .arch-title__line {
+    font-family: 'Chewy', 'Asap Condensed', system-ui, sans-serif;
+    fill: #fff;
+    stroke: var(--hub-outline);
+    stroke-width: 0.17em;
+    stroke-linejoin: round;
+    paint-order: stroke fill;
+    /* The banner's dark extrusion, down and slightly left. */
+    filter: drop-shadow(-2px 5px 0 var(--hub-outline));
+  }
+
+  .hub__page-title {
+    font-family: 'Chewy', 'Asap Condensed', system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 2.2rem;
+    letter-spacing: 0.02em;
+    color: #fff;
+    -webkit-text-stroke: 0.17em var(--hub-outline);
+    paint-order: stroke fill;
+    text-shadow: -2px 4px 0 var(--hub-outline);
   }
 
   .hub__tagline {
-    margin-top: 14px;
-    font-weight: 500;
-    font-size: 0.98rem;
+    margin-top: 10px;
+    font-size: 1rem;
+    color: var(--hub-ink);
   }
 
   .hub__board-link {
@@ -115,8 +114,11 @@ body:has(.hub) {
     border: 3px solid var(--hub-outline);
     border-radius: 999px;
     box-shadow: 0 3px 0 var(--hub-outline);
-    color: #2a1a0e;
-    font-weight: 700;
+    color: var(--hub-ink);
+    font-family: var(--hub-font-head);
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     text-decoration: none;
   }
 
@@ -142,7 +144,7 @@ body:has(.hub) {
 
   .hub__note {
     margin-top: 16px;
-    color: var(--hub-ink-soft);
+    color: var(--hub-ink);
     font-size: 0.9rem;
     text-align: center;
   }
@@ -205,23 +207,28 @@ body:has(.hub) {
     width: 100%;
     height: 100%;
     border-radius: 15px;
+    object-fit: cover;
   }
 
-  .art__letter {
-    font-family: 'Fredoka', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-    fill: #3b2a12;
+  /* The space strip is wide and short: keep it as a band of planets across the top of a
+     black card, rather than blowing it up to fill the whole card. */
+  .card--closer {
+    background: #000;
+  }
+
+  .card--closer .art {
+    height: 124px;
+    border-radius: 15px 15px 0 0;
   }
 
   .card__mascot {
     position: absolute;
     /* Peeks over the text panel, like it's climbing out of the card. */
     z-index: 1;
-    right: -6px;
-    bottom: -18px;
-    width: 64px;
-    transform: rotate(8deg);
+    right: -10px;
+    bottom: -20px;
+    width: 92px;
+    transform: rotate(6deg);
     filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
     pointer-events: none;
   }
@@ -230,7 +237,8 @@ body:has(.hub) {
     position: relative;
     flex: 1;
     min-width: 0;
-    margin: 12px;
+    /* The top of the card is left open so the artwork shows. */
+    margin: 96px 12px 12px;
     padding: 12px 14px;
     border-radius: 12px;
     background: rgba(255, 250, 238, 0.95);
@@ -253,27 +261,30 @@ body:has(.hub) {
     gap: 8px;
 
     h2 {
-      font-size: 1.45rem;
-      font-weight: 700;
-      line-height: 1.1;
+      font-family: var(--hub-font-head);
+      font-size: 1.6rem;
+      line-height: 1.05;
     }
   }
 
   .card__num {
-    font-weight: 600;
+    font-family: var(--hub-font-head);
     opacity: 0.6;
   }
 
   .card__kicker {
     margin-top: 2px;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-family: var(--hub-font-head);
+    font-size: 0.95rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
   }
 
   .card__blurb {
     margin-top: 2px;
-    font-size: 0.88rem;
-    opacity: 0.8;
+    font-weight: 500;
+    font-size: 0.9rem;
+    opacity: 0.85;
   }
 
   .card__result {
@@ -329,8 +340,10 @@ body:has(.hub) {
     border: 2px solid var(--hub-outline);
     background: var(--hub-pizza);
     color: #fff;
-    font-size: 0.95rem;
-    font-weight: 700;
+    font-family: var(--hub-font-head);
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
   }
 
   .card--closer .card__play {
@@ -359,8 +372,8 @@ body:has(.hub) {
   }
 
   .card__past-date {
-    font-weight: 700;
-    font-size: 1.05rem;
+    font-family: var(--hub-font-head);
+    font-size: 1.15rem;
     line-height: 1.15;
   }
 
@@ -403,8 +416,8 @@ body:has(.hub) {
     margin-bottom: 10px;
 
     h2 {
-      font-size: 1.3rem;
-      font-weight: 700;
+      font-family: var(--hub-font-head);
+      font-size: 1.5rem;
     }
   }
 
@@ -472,7 +485,10 @@ body:has(.hub) {
     border-radius: 12px;
     background: var(--hub-pizza);
     color: #fff;
-    font-weight: 700;
+    font-family: var(--hub-font-head);
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     text-align: center;
     text-decoration: none;
   }

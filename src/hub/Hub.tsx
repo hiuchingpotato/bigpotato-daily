@@ -5,7 +5,7 @@ import { todayKey } from '../games/pizza/game/daily'
 import { pizzaPastDays, pizzaToday } from '../games/pizza/summary'
 import { Link } from '../Link'
 import type { Route } from '../router'
-import { SpaceScene, TrianglePattern } from './art'
+import { ArchTitle } from './ArchTitle'
 import './hub.css'
 
 /** How many earlier puzzles each game's row offers. Older Closer puzzles stay in its calendar. */
@@ -58,9 +58,13 @@ export function Hub() {
   return (
     <div className="hub">
       <header className="hub__header">
-        <h1 className="hub__title">
-          <span>Big Potato</span> <span>Daily Games</span>
-        </h1>
+        <ArchTitle
+          label="Big Potato Daily Games"
+          lines={[
+            { text: 'BIG POTATO', size: 40, width: 210 },
+            { text: 'DAILY GAMES', size: 62, width: 330 },
+          ]}
+        />
         <p className="hub__tagline">
           Love our games? Make it a habit!
           <br />
@@ -75,7 +79,7 @@ export function Hub() {
         <GameRow label="P for Pizza">
           <TodayCard
             route="pizza"
-            art={<TrianglePattern />}
+            art="triangle-cards.jpg"
             name="P for Pizza"
             kicker="Cheesy letter game"
             blurb="Think quick, build a point-heavy pizza every day."
@@ -102,7 +106,7 @@ export function Hub() {
         <GameRow label="Closer">
           <TodayCard
             route="closer"
-            art={<SpaceScene />}
+            art="space.jpg"
             mascot
             name="Closer"
             kicker="Word-meaning game"
@@ -158,7 +162,8 @@ function GameRow({ label, children }: { label: string; children: ReactNode }) {
 
 interface TodayCardProps {
   route: Route
-  art: ReactNode
+  /** Background artwork in public/hub/. */
+  art: string
   mascot?: boolean
   name: string
   kicker: string
@@ -175,7 +180,7 @@ interface TodayCardProps {
 function TodayCard({ route, art, mascot, name, kicker, blurb, number, date, streak, result, played, countdown }: TodayCardProps) {
   return (
     <Link to={route} className={`card card--today card--${route}`}>
-      {art}
+      <img className="art" src={`${import.meta.env.BASE_URL}hub/${art}`} alt="" />
       {mascot ? <img className="card__mascot" src={`${import.meta.env.BASE_URL}hub/sausage.png`} alt="" /> : null}
       <div className="card__body">
         <div className="card__head">

@@ -30,7 +30,7 @@ export function LeaderboardPage() {
         <Link to="home" className="hub__back" aria-label="All games">
           ‹
         </Link>
-        <h1 className="hub__title hub__title--small">Leaderboard</h1>
+        <h1 className="hub__page-title">Leaderboard</h1>
       </header>
 
       <section className="board">
