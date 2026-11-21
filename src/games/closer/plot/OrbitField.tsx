@@ -33,6 +33,25 @@ function prefersReducedMotion(): boolean {
   );
 }
 
+/**
+ * The comic-style space behind the board, built from the Sling 'Em panel: flat
+ * black, hand-drawn stars and dots (a repeating tile), and the comic's planets
+ * around the edges. It sits behind the canvas and stays put while the board pans
+ * and zooms, so nothing in it can be mistaken for a word.
+ */
+const PLANETS = ["ringed", "purple", "earth", "lightblue", "red", "blue"] as const;
+
+function SpaceBackdrop() {
+  const base = `${import.meta.env.BASE_URL}closer/space/`;
+  return (
+    <div className="orbit-space" aria-hidden="true">
+      {PLANETS.map((name) => (
+        <img key={name} className={`orbit-planet orbit-planet--${name}`} src={`${base}${name}.png`} alt="" />
+      ))}
+    </div>
+  );
+}
+
 export default function OrbitField({
   xs,
   ys,
@@ -338,6 +357,7 @@ export default function OrbitField({
 
   return (
     <div className="orbit" ref={wrapRef}>
+      <SpaceBackdrop />
       <canvas
         ref={canvasRef}
         className="orbit-canvas"
