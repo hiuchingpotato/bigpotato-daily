@@ -39,20 +39,19 @@ const COWS: { art: string; x: number; y: number; asleep?: boolean }[] = [
 ]
 
 /**
- * On the start screen the herd grazes together on the left hill (the camera's up on
- * the sky, so only the hilltops are in view). Same units as COWS: fractions of the
- * screen in the grass view, so these sit high, on the hill.
+ * The start screen is a whole screen above the meadow: sky, the two hills, five of the
+ * herd grazing on the left hill and the pink cow alone on the right one. These are the
+ * five, as fractions across the screen, and how far down the hillside each stands
+ * (also a fraction of the screen). Their height comes from the hill's own outline, so
+ * they stand on the grass whatever the screen size.
  */
-const INTRO: [number, number][] = [
-  [0.1, 0.5],
-  [0.25, 0.47],
-  [0.39, 0.51],
-  [0.17, 0.56],
-  [0.32, 0.58],
-  [0.45, 0.6],
-  [0.08, 0.61],
-  [0.22, 0.62],
-  [0.38, 0.63],
+const ON_HILL = 5
+const HILL_SPOTS: [number, number][] = [
+  [0.1, 0.03],
+  [0.24, 0.01],
+  [0.37, 0.05],
+  [0.17, 0.1],
+  [0.31, 0.13],
 ]
 
 /** Where the herd gathers, as a fraction down the field. */
@@ -72,8 +71,8 @@ const SLOTS: [number, number][] = [
   [1.2, 0.06],
 ]
 
-/** Perspective: further up the field is further away, so smaller. */
-const depth = (y: number) => 0.5 + (Math.max(0.48, Math.min(1, y)) - 0.48) * (0.62 / 0.52)
+/** Perspective: further up the field is further away, so smaller. (Hill cows are smaller still.) */
+const depth = (y: number) => (y < 0 ? 0.55 : 0.5 + (Math.max(0.36, Math.min(1, y)) - 0.36) * (0.62 / 0.64))
 
 /** The cow's width in px, matching --cow in the CSS. */
 const cowPx = () => Math.min(150, Math.max(92, window.innerWidth * 0.27))
@@ -110,6 +109,8 @@ interface Cow {
   from?: { x: number; y: number; s: number }
   /** Trotting rather than ambling: coming down off the hill when the game starts. */
   fast?: boolean
+  /** On the start screen's hill: how far down the hillside it grazes. */
+  hill?: number
 }
 
 /**
@@ -148,11 +149,13 @@ class Herd {
       ty: c.y,
       flip: Math.random() < 0.5,
     }))
-    // The start screen: everyone grazing on the left hill.
+    // The start screen: five of the herd grazing on the left hill (the rest are down in
+    // the meadow, out of sight below).
     if (view === 'wide') {
-      this.cows.forEach((c, i) => {
-        const [x, y] = INTRO[i % INTRO.length]!
-        Object.assign(c, { x, y, tx: x, ty: y, s: depth(y) })
+      this.cows.slice(0, ON_HILL).forEach((c, i) => {
+        const [x, down] = HILL_SPOTS[i]!
+        const y = (this.groundAt(x) ?? -0.2) + down
+        Object.assign(c, { x, y, tx: x, ty: y, s: depth(y), hill: down })
       })
     }
     // Anyone already in the herd (a reload, or the results) is simply there.
@@ -177,6 +180,31 @@ class Herd {
 
   stop() {
     cancelAnimationFrame(this.raf)
+  }
+
+  /**
+   * Where the left hill's grass is at a point across the screen, in the same units as a
+   * cow's y (fractions of the screen, from the top of the grass view, so negative: the
+   * hill is a screen above). Read off the hill's own outline, so it fits any screen.
+   */
+  groundAt(x: number): number | null {
+    const hill = this.field.querySelector<SVGPathElement>('.hm-left-hill')
+    const svg = hill?.ownerSVGElement
+    const ctm = svg?.getScreenCTM()
+    if (!hill || !svg || !ctm) return null
+    const inv = ctm.inverse()
+    const box = svg.getBoundingClientRect()
+    const field = this.field.getBoundingClientRect()
+    const worldTop = this.world.getBoundingClientRect().top
+    const h = this.field.clientHeight || window.innerHeight
+    const pan = Math.max(0, this.world.offsetHeight - h)
+    const pt = svg.createSVGPoint()
+    pt.x = field.left + x * field.width
+    for (let sy = box.top; sy <= box.bottom; sy += 2) {
+      pt.y = sy
+      if (hill.isPointInFill(pt.matrixTransform(inv))) return (sy - worldTop - pan) / h
+    }
+    return null
   }
 
   slotAt(slot: number): [number, number] {
@@ -204,8 +232,8 @@ class Herd {
       this.free().forEach((c) => {
         const home = COWS[this.cows.indexOf(c)]!
         const tx = Math.min(0.88, Math.max(0.12, home.x + rand(-0.05, 0.05)))
-        const ty = Math.max(0.51, home.y + rand(-0.03, 0.03))
-        Object.assign(c, { state: 'walk', tx, ty, fast: true, flip: tx > c.x })
+        const ty = Math.max(0.4, home.y + rand(-0.03, 0.03))
+        Object.assign(c, { state: 'walk', tx, ty, fast: true, hill: undefined, flip: tx > c.x })
         this.draw(c)
       })
     } else {
@@ -259,11 +287,14 @@ class Herd {
   wanderFrom(c: Cow): [number, number] {
     const herdUp = this.cows.some((o) => o.state === 'herd' || o.state === 'join')
     let best: [number, number] = [c.x, c.y]
+    // On the start screen's hill: a little shuffle along the hillside, still on the grass.
+    if (c.hill !== undefined) {
+      const x = Math.min(0.44, Math.max(0.05, c.x + rand(-0.06, 0.06)))
+      return [x, (this.groundAt(x) ?? c.y - c.hill) + c.hill]
+    }
     for (let i = 0; i < 12; i++) {
-      // On the start screen they keep to the left hill; after that, the whole meadow.
-      const [x0, x1, y0, y1] = this.view === 'wide' ? [0.06, 0.46, 0.46, 0.63] : [0.12, 0.88, 0.51, 0.98]
-      const x = Math.min(x1, Math.max(x0, c.x + rand(-0.32, 0.32)))
-      const y = Math.min(y1, Math.max(y0, c.y + rand(-0.16, 0.16)))
+      const x = Math.min(0.88, Math.max(0.12, c.x + rand(-0.32, 0.32)))
+      const y = Math.min(0.98, Math.max(0.4, c.y + rand(-0.16, 0.16)))
       best = [x, y]
       if (!herdUp || Math.abs(x - 0.5) > 0.3 || Math.abs(y - HERD_Y) > 0.14) break
     }
@@ -339,7 +370,8 @@ class Herd {
     st.top = `${(pan + c.y * h).toFixed(1)}px`
     st.setProperty('--s', c.s.toFixed(3))
     // Further down is in front; the herd is in front of everything.
-    st.zIndex = String(Math.round(c.y * 100) + (c.state === 'herd' || c.state === 'join' ? 200 : 0))
+    // (Up on the start screen's hill y is negative, so lift everything above the scenery.)
+    st.zIndex = String(100 + Math.round(c.y * 100) + (c.state === 'herd' || c.state === 'join' ? 200 : 0))
     const cl = c.el.classList
     cl.toggle('is-walking', c.state === 'walk' || c.state === 'join')
     cl.toggle('is-trotting', c.state === 'join')
@@ -347,6 +379,7 @@ class Herd {
     cl.toggle('is-staring', c.state === 'stare')
     cl.toggle('is-herd', c.state === 'herd' || c.state === 'join')
     cl.toggle('is-flipped', c.flip)
+    cl.toggle('is-on-hill', c.hill !== undefined)
   }
 }
 
@@ -469,7 +502,7 @@ export function Field({
         const style = {
           left: `calc(50% + var(--cow) * ${dx})`,
           top: `calc(var(--pan) + (100% - var(--pan)) * ${HERD_Y} + var(--cow) * ${dy})`,
-          zIndex: 200 + Math.round((HERD_Y + dy * 0.1) * 100),
+          zIndex: 300 + Math.round((HERD_Y + dy * 0.1) * 100),
           '--s': HERD_SCALE,
         } as CSSProperties
         return (
@@ -494,7 +527,9 @@ export function Field({
  */
 function Scenery() {
   return (
-    <svg className="hm-scenery" viewBox="0 0 300 220" preserveAspectRatio="xMidYMax slice">
+    // Very wide, so it's always scaled by its height (wide screens see more of the hills
+    // either side; phones see roughly x 70-270: the left summit and the right hill's flat top).
+    <svg className="hm-scenery" viewBox="-580 0 1500 220" preserveAspectRatio="xMidYMax slice">
       <defs>
         <linearGradient id="hm-hill-back" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#bde44c" />
@@ -519,12 +554,16 @@ function Scenery() {
       {/* After the big-screen art. Phones see roughly x 73-227 of this 300-wide scene, so
           the shapes are placed for that window: a long, light hill rising from the valley
           to the right edge... */}
-      <path d="M116 220 C146 176 186 140 236 126 C268 117 300 114 330 114 L330 220 Z" fill="url(#hm-hill-back)" />
+      <path d="M116 220 C146 176 186 140 236 126 C268 117 300 114 340 114 C480 114 680 128 900 140 L900 220 Z" fill="url(#hm-hill-back)" />
       <g fill="#d2ef67" opacity="0.85">
         <use href="#hm-clump" x="214" y="140" />
         <use href="#hm-clump" x="186" y="162" />
         <use href="#hm-clump" x="226" y="176" />
         <use href="#hm-clump" x="160" y="190" />
+        <use href="#hm-clump" x="300" y="132" />
+        <use href="#hm-clump" x="360" y="150" />
+        <use href="#hm-clump" x="430" y="128" />
+        <use href="#hm-clump" x="520" y="160" />
       </g>
       {/*
         On the start screen, the pink cow stands alone on top of the other hill, glaring
@@ -532,14 +571,15 @@ function Scenery() {
       */}
       <g className="hm-hilltop">
         <g className="hm-hilltop__cow">
-          <image href={`${ART}pink-cow.png`} x="184" y="118" width="31" height="23.8" />
+          {/* Standing back on the gentle top of the hill, not the steep bit. */}
+          <image href={`${ART}pink-cow.png`} x="222" y="90.8" width="46" height="35.4" />
         </g>
-        <circle className="hm-hilltop__puff hm-hilltop__puff--1" cx="190" cy="134" r="3.6" />
-        <circle className="hm-hilltop__puff hm-hilltop__puff--2" cx="195" cy="135" r="3" />
+        <circle className="hm-hilltop__puff hm-hilltop__puff--1" cx="233" cy="110" r="4.6" />
+        <circle className="hm-hilltop__puff hm-hilltop__puff--2" cx="238" cy="111" r="3.8" />
       </g>
 
       {/* ...behind a big, darker, rounded hill on the left running down into the valley. */}
-      <path d="M-30 150 C10 126 52 112 98 112 C140 112 170 144 192 220 L-30 220 Z" fill="url(#hm-hill-front)" />
+      <path className="hm-left-hill" d="M-600 196 C-420 190 -230 168 -110 146 C-30 130 40 112 98 112 C140 112 170 144 192 220 L-600 220 Z" fill="url(#hm-hill-front)" />
       <g fill="#9bd84a" opacity="0.9">
         <use href="#hm-clump" x="86" y="128" />
         <use href="#hm-clump" x="122" y="126" />
@@ -547,10 +587,14 @@ function Scenery() {
         <use href="#hm-clump" x="96" y="158" />
         <use href="#hm-clump" x="126" y="178" />
         <use href="#hm-clump" x="82" y="190" />
+        <use href="#hm-clump" x="20" y="136" />
+        <use href="#hm-clump" x="-60" y="150" />
+        <use href="#hm-clump" x="-160" y="168" />
+        <use href="#hm-clump" x="-280" y="184" />
       </g>
 
       {/* Into the meadow. */}
-      <rect y="150" width="300" height="70" fill="url(#hm-meet)" />
+      <rect x="-600" y="150" width="1500" height="70" fill="url(#hm-meet)" />
     </svg>
   )
 }
