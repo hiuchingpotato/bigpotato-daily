@@ -438,38 +438,44 @@ function Scenery() {
     <svg className="hm-scenery" viewBox="0 0 300 220" preserveAspectRatio="xMidYMax slice">
       <defs>
         <linearGradient id="hm-hill-back" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#b6dd45" />
-          <stop offset="1" stopColor="#9acf3e" />
+          <stop offset="0" stopColor="#bde44c" />
+          <stop offset="1" stopColor="#9fd23a" />
         </linearGradient>
         <linearGradient id="hm-hill-front" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#6fb233" />
-          <stop offset="1" stopColor="#82c23b" />
+          <stop offset="0" stopColor="#7cc22e" />
+          <stop offset="1" stopColor="#5fae26" />
         </linearGradient>
         <linearGradient id="hm-meet" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#96cf47" stopOpacity="0" />
           <stop offset="1" stopColor="#96cf47" />
         </linearGradient>
         <path id="hm-tuft" transform="scale(0.42)" d="M0 0c-2-8-7-13-13-16 7 1 12 6 13 11 0-9 3-17 8-21-2 8-3 15-2 23 3-6 8-10 13-11-5 3-9 8-10 14z" />
+        {/* A clump of blades, like the tufts dotted over the big-screen hills. */}
+        <g id="hm-clump">
+          <path transform="translate(-6 0) scale(0.5)" d="M0 0c-2-8-7-13-13-16 7 1 12 6 13 11 0-9 3-17 8-21-2 8-3 15-2 23 3-6 8-10 13-11-5 3-9 8-10 14z" />
+          <path transform="translate(4 1) scale(0.62)" d="M0 0c-2-8-7-13-13-16 7 1 12 6 13 11 0-9 3-17 8-21-2 8-3 15-2 23 3-6 8-10 13-11-5 3-9 8-10 14z" />
+        </g>
       </defs>
 
-      {/* The far hill on the right, rising out of the valley... */}
-      <path d="M108 220 C138 162 168 126 200 120 C228 115 262 126 330 152 L330 220 Z" fill="url(#hm-hill-back)" />
-      <g fill="#c8e65a" opacity="0.8">
-        <use href="#hm-tuft" x="178" y="140" />
-        <use href="#hm-tuft" x="200" y="128" />
-        <use href="#hm-tuft" x="224" y="140" />
-        <use href="#hm-tuft" x="166" y="166" />
-        <use href="#hm-tuft" x="210" y="166" />
+      {/* After the big-screen art. Phones see roughly x 73-227 of this 300-wide scene, so
+          the shapes are placed for that window: a long, light hill rising from the valley
+          to the right edge... */}
+      <path d="M116 220 C146 176 186 140 236 126 C268 117 300 114 330 114 L330 220 Z" fill="url(#hm-hill-back)" />
+      <g fill="#d2ef67" opacity="0.85">
+        <use href="#hm-clump" x="214" y="140" />
+        <use href="#hm-clump" x="186" y="162" />
+        <use href="#hm-clump" x="226" y="176" />
+        <use href="#hm-clump" x="160" y="190" />
       </g>
-      {/* ...and the nearer one on the left, running down into it. */}
-      <path d="M-30 196 C20 150 62 106 104 102 C138 99 164 146 182 220 L-30 220 Z" fill="url(#hm-hill-front)" />
-      <g fill="#8ccd42" opacity="0.85">
-        <use href="#hm-tuft" x="88" y="116" />
-        <use href="#hm-tuft" x="114" y="112" />
-        <use href="#hm-tuft" x="134" y="134" />
-        <use href="#hm-tuft" x="80" y="148" />
-        <use href="#hm-tuft" x="112" y="164" />
-        <use href="#hm-tuft" x="146" y="186" />
+      {/* ...behind a big, darker, rounded hill on the left running down into the valley. */}
+      <path d="M-30 150 C10 126 52 112 98 112 C140 112 170 144 192 220 L-30 220 Z" fill="url(#hm-hill-front)" />
+      <g fill="#9bd84a" opacity="0.9">
+        <use href="#hm-clump" x="86" y="128" />
+        <use href="#hm-clump" x="122" y="126" />
+        <use href="#hm-clump" x="146" y="154" />
+        <use href="#hm-clump" x="96" y="158" />
+        <use href="#hm-clump" x="126" y="178" />
+        <use href="#hm-clump" x="82" y="190" />
       </g>
 
       {/* Into the meadow. */}

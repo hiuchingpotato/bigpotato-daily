@@ -7,12 +7,12 @@
       <stop offset="1" stop-color="#bdeafc"/>
     </linearGradient>
     <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#b6dd45"/>
-      <stop offset="1" stop-color="#9acf3e"/>
+      <stop offset="0" stop-color="#bde44c"/>
+      <stop offset="1" stop-color="#9fd23a"/>
     </linearGradient>
     <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#6fb233"/>
-      <stop offset="1" stop-color="#82c23b"/>
+      <stop offset="0" stop-color="#7cc22e"/>
+      <stop offset="1" stop-color="#5fae26"/>
     </linearGradient>
     <linearGradient id="meadow" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#96cf47" stop-opacity="0"/>
@@ -31,12 +31,12 @@
   <ellipse cx="96" cy="46" rx="26" ry="6" fill="#aee8ee"/>
   <g fill="#fff"><circle cx="82" cy="39" r="9"/><circle cx="97" cy="32" r="12"/><circle cx="112" cy="39" r="9"/><ellipse cx="98" cy="43" rx="24" ry="6"/></g>
   <!-- The hills sit high so they show above the card's white panel. -->
-  <g transform="translate(0 -78)">
-  <path d="M130 300 C175 200 230 150 290 145 C330 142 370 156 420 175 L420 400 Z" fill="url(#back)"/>
-  <path d="M-20 175 C50 135 110 122 150 136 C195 152 225 210 245 300 L-20 400 Z" fill="url(#front)"/>
-  <g fill="#8ccd42" opacity=".85"><use href="#t" x="70" y="160"/><use href="#t" x="120" y="150"/><use href="#t" x="160" y="190"/></g>
-  <g fill="#c8e65a" opacity=".8"><use href="#t" x="270" y="170"/><use href="#t" x="330" y="166"/><use href="#t" x="240" y="200"/></g>
-  <rect y="200" width="400" height="200" fill="url(#meadow)"/>
+  <g transform="translate(0 -112)">
+  <path d="M150 300 C200 240 262 200 330 182 C370 172 400 170 420 170 L420 400 Z" fill="url(#back)"/>
+  <path d="M-20 200 C30 168 80 148 130 148 C190 148 230 200 262 300 L-20 400 Z" fill="url(#front)"/>
+  <g fill="#9bd84a" opacity=".9"><use href="#t" x="70" y="172"/><use href="#t" x="120" y="164"/><use href="#t" x="176" y="196"/></g>
+  <g fill="#d2ef67" opacity=".85"><use href="#t" x="300" y="200"/><use href="#t" x="360" y="186"/><use href="#t" x="262" y="226"/></g>
+  <rect y="200" width="400" height="260" fill="url(#meadow)"/>
   <g fill="#a6da64" opacity=".8"><use href="#t" x="40" y="262"/><use href="#t" x="150" y="284"/><use href="#t" x="260" y="258"/><use href="#t" x="360" y="280"/></g>
   <use href="#d" x="100" y="276"/><use href="#d" x="310" y="290"/><use href="#d" x="210" y="262"/>
   </g>
