@@ -27,8 +27,8 @@ const EYE_H = 41
 
 /** The field's cows, where each starts (as fractions of the field), and who starts off napping. */
 const COWS: { art: string; x: number; y: number; asleep?: boolean }[] = [
-  { art: 'cow-1', x: 0.18, y: 0.49, asleep: true },
-  { art: 'cow-4', x: 0.8, y: 0.48 },
+  { art: 'cow-1', x: 0.18, y: 0.53, asleep: true },
+  { art: 'cow-4', x: 0.8, y: 0.52 },
   { art: 'cow-3', x: 0.44, y: 0.54 },
   { art: 'cow-6', x: 0.86, y: 0.6, asleep: true },
   { art: 'cow-2', x: 0.12, y: 0.66 },
@@ -39,7 +39,7 @@ const COWS: { art: string; x: number; y: number; asleep?: boolean }[] = [
 ]
 
 /** Where the herd gathers, as a fraction down the field. */
-const HERD_Y = 0.66
+const HERD_Y = 0.68
 /** Herd cows stand bigger than anything else on the field: they're the focal point. */
 const HERD_SCALE = 1.45
 
@@ -56,7 +56,7 @@ const SLOTS: [number, number][] = [
 ]
 
 /** Perspective: further up the field is further away, so smaller. */
-const depth = (y: number) => 0.5 + (Math.max(0.44, Math.min(1, y)) - 0.44) * (0.62 / 0.56)
+const depth = (y: number) => 0.5 + (Math.max(0.48, Math.min(1, y)) - 0.48) * (0.62 / 0.52)
 
 /** The cow's width in px, matching --cow in the CSS. */
 const cowPx = () => Math.min(150, Math.max(92, window.innerWidth * 0.27))
@@ -212,7 +212,7 @@ class Herd {
     let best: [number, number] = [c.x, c.y]
     for (let i = 0; i < 12; i++) {
       const x = Math.min(0.88, Math.max(0.12, c.x + rand(-0.32, 0.32)))
-      const y = Math.min(0.98, Math.max(0.47, c.y + rand(-0.16, 0.16)))
+      const y = Math.min(0.98, Math.max(0.51, c.y + rand(-0.16, 0.16)))
       best = [x, y]
       if (!herdUp || Math.abs(x - 0.5) > 0.3 || Math.abs(y - HERD_Y) > 0.14) break
     }
@@ -453,23 +453,23 @@ function Scenery() {
       </defs>
 
       {/* The far hill on the right, rising out of the valley... */}
-      <path d="M96 220 C128 160 168 128 214 122 C250 118 290 132 330 150 L330 220 Z" fill="url(#hm-hill-back)" />
+      <path d="M108 220 C138 162 168 126 200 120 C228 115 262 126 330 152 L330 220 Z" fill="url(#hm-hill-back)" />
       <g fill="#c8e65a" opacity="0.8">
-        <use href="#hm-tuft" x="186" y="140" />
-        <use href="#hm-tuft" x="212" y="132" />
-        <use href="#hm-tuft" x="238" y="146" />
-        <use href="#hm-tuft" x="168" y="164" />
-        <use href="#hm-tuft" x="222" y="170" />
+        <use href="#hm-tuft" x="178" y="140" />
+        <use href="#hm-tuft" x="200" y="128" />
+        <use href="#hm-tuft" x="224" y="140" />
+        <use href="#hm-tuft" x="166" y="166" />
+        <use href="#hm-tuft" x="210" y="166" />
       </g>
       {/* ...and the nearer one on the left, running down into it. */}
-      <path d="M-30 140 C30 110 70 100 104 108 C134 116 160 150 182 220 L-30 220 Z" fill="url(#hm-hill-front)" />
+      <path d="M-30 196 C20 150 62 106 104 102 C138 99 164 146 182 220 L-30 220 Z" fill="url(#hm-hill-front)" />
       <g fill="#8ccd42" opacity="0.85">
-        <use href="#hm-tuft" x="80" y="120" />
-        <use href="#hm-tuft" x="108" y="128" />
-        <use href="#hm-tuft" x="128" y="146" />
-        <use href="#hm-tuft" x="70" y="150" />
-        <use href="#hm-tuft" x="104" y="168" />
-        <use href="#hm-tuft" x="140" y="186" />
+        <use href="#hm-tuft" x="88" y="116" />
+        <use href="#hm-tuft" x="114" y="112" />
+        <use href="#hm-tuft" x="134" y="134" />
+        <use href="#hm-tuft" x="80" y="148" />
+        <use href="#hm-tuft" x="112" y="164" />
+        <use href="#hm-tuft" x="146" y="186" />
       </g>
 
       {/* Into the meadow. */}
