@@ -8,6 +8,12 @@
       from its edges, so the cows' own white faces, inside black outlines, stay),
       then save each head as <out-prefix>-1.png, -2.png, ... cropped tight.
 
+  cutout.py pinkhead <pink-cow.png> <out.png>
+      Cut the pink cow's head out of its full-body artwork (public/herd/pink-cow.png):
+      crop to the head, clear the pink body showing past the right ear and under the
+      chin (flood fill from those edges, stopped by the black outline), keep the one
+      biggest piece, and trim the stub of the back's outline next to the ear.
+
 Reads and writes 8-bit RGBA, non-interlaced PNGs.
 """
 import struct
@@ -123,10 +129,71 @@ def split_columns(w, h, rows):
     return runs
 
 
+def pink_head(w, h, rows):
+    # The head, and a little of the body behind it, in pink-cow.png's 420x323 artwork.
+    w, h, rows = crop(rows, (20, 15, 236, 214))
+
+    def body(x, y):
+        r, g, b, a = rows[y][x * 4 : x * 4 + 4]
+        return a > 30 and max(r, g, b) > 90  # pink, not the black outline
+
+    seen = bytearray(w * h)
+    queue = deque()
+    for y in range(h):
+        if body(w - 1, y):
+            seen[y * w + w - 1] = 1
+            queue.append((w - 1, y))
+    for x in range(w):
+        if body(x, h - 1):
+            seen[(h - 1) * w + x] = 1
+            queue.append((x, h - 1))
+    while queue:
+        x, y = queue.popleft()
+        rows[y][x * 4 + 3] = 0
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if 0 <= nx < w and 0 <= ny < h and not seen[ny * w + nx] and body(nx, ny):
+                seen[ny * w + nx] = 1
+                queue.append((nx, ny))
+
+    # Keep only the biggest connected piece.
+    seen = bytearray(w * h)
+    pieces = []
+    for y in range(h):
+        for x in range(w):
+            if seen[y * w + x] or rows[y][x * 4 + 3] <= 30:
+                continue
+            queue, piece = deque([(x, y)]), []
+            seen[y * w + x] = 1
+            while queue:
+                cx, cy = queue.popleft()
+                piece.append((cx, cy))
+                for nx, ny in ((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)):
+                    if 0 <= nx < w and 0 <= ny < h and not seen[ny * w + nx] and rows[ny][nx * 4 + 3] > 30:
+                        seen[ny * w + nx] = 1
+                        queue.append((nx, ny))
+            pieces.append(piece)
+    pieces.sort(key=len, reverse=True)
+    for piece in pieces[1:]:
+        for x, y in piece:
+            rows[y][x * 4 + 3] = 0
+
+    w, h, rows = crop(rows, bbox(w, h, rows))
+    # The back's outline runs on past the right ear as a thin 4px stub: stop where it starts.
+    right = w
+    for x in range(w - 1, -1, -1):
+        if sum(rows[y][x * 4 + 3] > 30 for y in range(h)) > 6:
+            right = x + 1
+            break
+    w, h, rows = crop(rows, (0, 0, right, h))
+    return crop(rows, bbox(w, h, rows))
+
+
 mode, src, dst = sys.argv[1], sys.argv[2], sys.argv[3]
 w, h, rows = read(src)
 if mode == "trim":
     write(dst, *crop(rows, bbox(w, h, rows)))
+elif mode == "pinkhead":
+    write(dst, *pink_head(w, h, rows))
 elif mode == "heads":
     w, h, rows = crop(rows, bbox(w, h, rows))
     clear_white_card(w, h, rows)

@@ -81,9 +81,3 @@ export function herdHistory(now = new Date()): HerdHistory {
     answered: days.filter((d) => d.answered).length,
   }
 }
-
-export const OUTCOME_LABEL: Record<Outcome, string> = {
-  herd: '🐄 In the herd',
-  pink: '🩷 Pink cow',
-  between: 'Close to the herd',
-}

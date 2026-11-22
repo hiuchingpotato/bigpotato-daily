@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
 import { Link } from '../../Link'
+import { CowHead } from './CowHead'
 import {
   answeredCount,
   dayKey,
@@ -232,7 +233,9 @@ function ResultsView({ r }: { r: Results }) {
 
       <div className="herd-picks">
         <section className="herd-pick herd-pick--herd">
-          <p className="herd-pick__label">🐄 The herd said</p>
+          <p className="herd-pick__label">
+            <CowHead /> The herd said
+          </p>
           <p className="herd-pick__answer">{r.herd.map((g) => g.text).join(' / ')}</p>
           <p className="herd-pick__meta">
             {r.herd[0]!.count} of {r.players} players
@@ -240,7 +243,9 @@ function ResultsView({ r }: { r: Results }) {
         </section>
         {pink ? (
           <section className="herd-pick herd-pick--pink">
-            <p className="herd-pick__label">🩷 Pink cow answer</p>
+            <p className="herd-pick__label">
+              <CowHead pink /> Pink cow answer
+            </p>
             <p className="herd-pick__answer">{pink.text}</p>
             <p className="herd-pick__meta">
               {pink.you ? 'Only you' : pink.count === 1 ? `Only ${pink.names[0]}` : `${pink.count} players`}

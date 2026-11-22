@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from '../../Link'
+import { CowHead, OutcomeIcon } from '../herd/CowHead'
 import { Field, type FieldEvent } from './Field'
 import type { Prompt } from '../herd/prompts'
 import { suggestion } from './match'
@@ -10,7 +11,6 @@ import {
   dayKey,
   histogram,
   maxScore,
-  OUTCOME_EMOJI,
   percentile,
   puzzleNumber,
   questionsForDay,
@@ -85,7 +85,7 @@ export default function App() {
             const r = rounds[i]
             return (
               <li key={i} className={`hm__pip${r ? ` hm__pip--${r.outcome}` : i === current && phase === 'question' ? ' hm__pip--now' : ''}`}>
-                {r ? OUTCOME_EMOJI[r.outcome] : ''}
+                {r ? <OutcomeIcon outcome={r.outcome} /> : ''}
               </li>
             )
           })}
@@ -122,8 +122,12 @@ function Intro({ resumeAt, onStart }: { resumeAt: number; onStart: () => void })
         <li>
           <b>{ROUNDS} questions</b>, <b>{SECONDS} seconds</b> each.
         </li>
-        <li>🐄 The most common answer gathers a cow for your herd.</li>
-        <li>🩷 Too niche, and a pink cow barges in instead.</li>
+        <li>
+          <CowHead /> The most common answer gathers a cow for your herd.
+        </li>
+        <li>
+          <CowHead pink /> Too niche, and a pink cow barges in instead.
+        </li>
       </ul>
       <button type="button" className="hm-btn hm-btn--big" onClick={onStart}>
         {resumeAt > 0 ? `Carry on · question ${resumeAt + 1} of ${ROUNDS}` : 'Start game'}
@@ -296,7 +300,9 @@ function Results({ day, rounds }: { day: string; rounds: Round[] }) {
         <ol>
           {rounds.map((r, i) => (
             <li key={i} className={`hm-rounds__row hm-rounds__row--${r.outcome}`}>
-              <span className="hm-rounds__emoji">{OUTCOME_EMOJI[r.outcome]}</span>
+              <span className="hm-rounds__emoji">
+                <OutcomeIcon outcome={r.outcome} />
+              </span>
               <span className="hm-rounds__body">
                 <span className="hm-rounds__q">{r.prompt.question}</span>
                 <span className="hm-rounds__a">
@@ -316,11 +322,15 @@ function Results({ day, rounds }: { day: string; rounds: Round[] }) {
 
       <section className="hm-card hm-tally" aria-label="Your herd so far">
         <div>
-          <span className="hm-tally__value">🐄 {history.cows}</span>
+          <span className="hm-tally__value">
+            <CowHead /> {history.cows}
+          </span>
           <span className="hm-tally__label">{history.cows === 1 ? 'cow' : 'cows'} gathered</span>
         </div>
         <div>
-          <span className="hm-tally__value">🩷 {history.pinkCows}</span>
+          <span className="hm-tally__value">
+            <CowHead pink /> {history.pinkCows}
+          </span>
           <span className="hm-tally__label">{history.pinkCows === 1 ? 'pink cow' : 'pink cows'}</span>
         </div>
         <div>

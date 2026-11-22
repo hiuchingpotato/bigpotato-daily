@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { formatDuration } from '../games/closer/game/stats'
 import { closerSummary, type CloserDay, type CloserSummary } from '../games/closer/summary'
 import { todayKey } from '../games/pizza/game/daily'
-import { herdPastDays, herdToday, OUTCOME_LABEL, type HerdDay } from '../games/herd/summary'
+import { herdPastDays, herdToday, type HerdDay } from '../games/herd/summary'
+import { CowHead, HerdOutcomeLabel } from '../games/herd/CowHead'
 import { mentalityPastDays, mentalityToday, type MentalityDay } from '../games/mentality/summary'
 import { pizzaPastDays, pizzaToday } from '../games/pizza/summary'
 import { Link } from '../Link'
@@ -180,7 +181,7 @@ export function Hub() {
             number={herd.puzzle}
             date={shortDate(now)}
             streak={herd.streak}
-            result={herd.outcome ? OUTCOME_LABEL[herd.outcome] : herd.answered ? 'Answer locked in' : null}
+            result={herd.outcome ? <HerdOutcomeLabel outcome={herd.outcome} /> : herd.answered ? 'Answer locked in' : null}
             action={
               // Play, then a countdown to the 11pm reveal once you've answered, then Reveal.
               !herd.answered ? PLAY
@@ -206,15 +207,25 @@ export function Hub() {
   )
 }
 
-function mentalityResult(m: MentalityDay): string | null {
+function mentalityResult(m: MentalityDay): ReactNode {
   if (m.status === 'playing') return 'In progress'
   if (m.status !== 'done') return null
-  return `${m.score} pts · 🐄 ${m.herds}${m.pinks ? ` · 🩷 ${m.pinks}` : ''}`
+  return (
+    <>
+      {m.score} pts · <CowHead label="cows" /> {m.herds}
+      {m.pinks ? (
+        <>
+          {' · '}
+          <CowHead pink label="pink cows" /> {m.pinks}
+        </>
+      ) : null}
+    </>
+  )
 }
 
-function herdResult(h: HerdDay): string {
+function herdResult(h: HerdDay): ReactNode {
   if (!h.answered) return 'Not played'
-  return h.outcome ? OUTCOME_LABEL[h.outcome] : 'Answered'
+  return h.outcome ? <HerdOutcomeLabel outcome={h.outcome} /> : 'Answered'
 }
 
 function closerResult(c: CloserDay): string | null {
@@ -262,7 +273,7 @@ interface TodayCardProps {
   date: string
   streak: number | null
   /** Today's result once there is one, e.g. "120 pts". */
-  result: string | null
+  result: ReactNode
   action: Action
 }
 
@@ -310,7 +321,7 @@ interface PastCardProps {
   search: string
   date: string
   number: number
-  status: string
+  status: ReactNode
   done: boolean
 }
 
