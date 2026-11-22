@@ -108,8 +108,12 @@ class Herd {
   last = 0
   still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-  constructor(field: HTMLElement, els: HTMLElement[], herdSlots: number[]) {
+  /** The taller canvas the cows stand on, which the camera pans over. */
+  world: HTMLElement
+
+  constructor(field: HTMLElement, world: HTMLElement, els: HTMLElement[], herdSlots: number[]) {
     this.field = field
+    this.world = world
     const now = performance.now()
     this.cows = COWS.map((c, i) => ({
       el: els[i]!,
@@ -275,7 +279,10 @@ class Herd {
   draw(c: Cow) {
     const st = c.el.style
     st.left = `${(c.x * 100).toFixed(3)}%`
-    st.top = `${(c.y * 100).toFixed(3)}%`
+    // y is a fraction of the screen in the grass view; the world above it is extra sky.
+    const h = this.field.clientHeight || window.innerHeight
+    const pan = Math.max(0, this.world.offsetHeight - h)
+    st.top = `${(pan + c.y * h).toFixed(1)}px`
     st.setProperty('--s', c.s.toFixed(3))
     // Further down is in front; the herd is in front of everything.
     st.zIndex = String(Math.round(c.y * 100) + (c.state === 'herd' || c.state === 'join' ? 200 : 0))
@@ -301,8 +308,22 @@ class Herd {
  * - pink: a pink cow charges into the middle, spinning a cow in its way.
  * - more or less / time's up: nobody takes any notice.
  */
-export function Field({ rounds, event, mood, deadline }: { rounds: Round[]; event: FieldEvent | null; mood: 'idle' | 'alert'; deadline: number }) {
+export function Field({
+  rounds,
+  event,
+  mood,
+  deadline,
+  view,
+}: {
+  rounds: Round[]
+  event: FieldEvent | null
+  mood: 'idle' | 'alert'
+  deadline: number
+  /** wide: the camera up on the sky and the whole valley; close: down on the grass with the cows. */
+  view: 'wide' | 'close'
+}) {
   const field = useRef<HTMLDivElement>(null)
+  const world = useRef<HTMLDivElement>(null)
   const els = useRef<HTMLDivElement[]>([])
   const herd = useRef<Herd | null>(null)
   const { herd: herdSlots, pinks } = gather(rounds)
@@ -314,7 +335,7 @@ export function Field({ rounds, event, mood, deadline }: { rounds: Round[]; even
   // Only on mount: the herd so far is placed straight away, later joiners walk in.
   const initial = useRef(herdSlots.filter((h) => h.round !== event?.round).map((h) => h.slot))
   useEffect(() => {
-    const h = new Herd(field.current!, els.current, initial.current)
+    const h = new Herd(field.current!, world.current!, els.current, initial.current)
     herd.current = h
     h.start()
     return () => h.stop()
@@ -346,7 +367,9 @@ export function Field({ rounds, event, mood, deadline }: { rounds: Round[]; even
   const hurry = deadline > 0 && hurryFor === deadline
 
   return (
-    <div ref={field} className={`hm-field hm-field--${mood}${hurry ? ' hm-field--hurry' : ''}`} aria-hidden="true">
+    <div ref={field} className={`hm-field hm-field--${mood} hm-field--${view}${hurry ? ' hm-field--hurry' : ''}`} aria-hidden="true">
+      <div ref={world} className="hm-world">
+      <Sky />
       <Scenery />
       {COWS.map((cow, i) => (
         <div
@@ -386,7 +409,7 @@ export function Field({ rounds, event, mood, deadline }: { rounds: Round[]; even
         const [dx, dy] = SLOTS[p.slot % SLOTS.length]!
         const style = {
           left: `calc(50% + var(--cow) * ${dx})`,
-          top: `calc(${HERD_Y * 100}% + var(--cow) * ${dy})`,
+          top: `calc(var(--pan) + (100% - var(--pan)) * ${HERD_Y} + var(--cow) * ${dy})`,
           zIndex: 200 + Math.round((HERD_Y + dy * 0.1) * 100),
           '--s': HERD_SCALE,
         } as CSSProperties
@@ -401,6 +424,7 @@ export function Field({ rounds, event, mood, deadline }: { rounds: Round[]; even
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
@@ -477,6 +501,40 @@ function Scenery() {
 
       {/* Into the meadow. */}
       <rect y="150" width="300" height="70" fill="url(#hm-meet)" />
+    </svg>
+  )
+}
+
+/** The open sky above the hills, seen when the camera's up for the start screen. */
+function Sky() {
+  return (
+    <svg className="hm-sky" viewBox="0 0 300 200" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="hm-sky-high" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#2393ea" />
+          <stop offset="1" stopColor="#3aa6f4" />
+        </linearGradient>
+      </defs>
+      <rect width="300" height="200" fill="url(#hm-sky-high)" />
+      <g className="hm-scenery__cloud">
+        <ellipse cx="96" cy="78" rx="44" ry="10" fill="#aee8ee" />
+        <g fill="#fff">
+          <circle cx="66" cy="68" r="12" />
+          <circle cx="86" cy="58" r="18" />
+          <circle cx="110" cy="60" r="16" />
+          <circle cx="130" cy="69" r="12" />
+          <ellipse cx="97" cy="73" rx="42" ry="9" />
+        </g>
+      </g>
+      <g className="hm-scenery__cloud hm-scenery__cloud--small">
+        <ellipse cx="214" cy="140" rx="30" ry="7" fill="#aee8ee" />
+        <g fill="#fff">
+          <circle cx="198" cy="133" r="9" />
+          <circle cx="214" cy="126" r="13" />
+          <circle cx="231" cy="133" r="9" />
+          <ellipse cx="215" cy="137" rx="28" ry="7" />
+        </g>
+      </g>
     </svg>
   )
 }

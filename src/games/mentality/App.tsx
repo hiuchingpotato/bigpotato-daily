@@ -71,7 +71,7 @@ export default function App() {
 
   return (
     <div className={`hm hm--${phase}`}>
-      <Field rounds={rounds} event={phase === 'reveal' ? event : null} mood={mood} deadline={phase === 'question' ? deadline : 0} />
+      <Field rounds={rounds} event={phase === 'reveal' ? event : null} mood={mood} deadline={phase === 'question' ? deadline : 0} view={phase === 'intro' ? 'wide' : 'close'} />
 
       <header className="hm__top">
         <Link to="home" className="hm__home" aria-label="All games">
