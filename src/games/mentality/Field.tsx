@@ -27,10 +27,10 @@ const EYE_H = 41
 
 /** The field's cows, where each starts (as fractions of the field), and who starts off napping. */
 const COWS: { art: string; x: number; y: number; asleep?: boolean }[] = [
-  { art: 'cow-1', x: 0.16, y: 0.4, asleep: true },
-  { art: 'cow-4', x: 0.8, y: 0.37 },
-  { art: 'cow-3', x: 0.42, y: 0.48 },
-  { art: 'cow-6', x: 0.86, y: 0.57, asleep: true },
+  { art: 'cow-1', x: 0.18, y: 0.49, asleep: true },
+  { art: 'cow-4', x: 0.8, y: 0.48 },
+  { art: 'cow-3', x: 0.44, y: 0.54 },
+  { art: 'cow-6', x: 0.86, y: 0.6, asleep: true },
   { art: 'cow-2', x: 0.12, y: 0.66 },
   { art: 'cow-5', x: 0.58, y: 0.7 },
   { art: 'cow-1', x: 0.3, y: 0.86 },
@@ -56,7 +56,7 @@ const SLOTS: [number, number][] = [
 ]
 
 /** Perspective: further up the field is further away, so smaller. */
-const depth = (y: number) => 0.5 + (Math.max(0.28, Math.min(1, y)) - 0.28) * (0.62 / 0.72)
+const depth = (y: number) => 0.5 + (Math.max(0.44, Math.min(1, y)) - 0.44) * (0.62 / 0.56)
 
 /** The cow's width in px, matching --cow in the CSS. */
 const cowPx = () => Math.min(150, Math.max(92, window.innerWidth * 0.27))
@@ -208,7 +208,7 @@ class Herd {
     let best: [number, number] = [c.x, c.y]
     for (let i = 0; i < 12; i++) {
       const x = Math.min(0.88, Math.max(0.12, c.x + rand(-0.32, 0.32)))
-      const y = Math.min(0.98, Math.max(0.34, c.y + rand(-0.16, 0.16)))
+      const y = Math.min(0.98, Math.max(0.47, c.y + rand(-0.16, 0.16)))
       best = [x, y]
       if (!herdUp || Math.abs(x - 0.5) > 0.3 || Math.abs(y - HERD_Y) > 0.14) break
     }
@@ -347,6 +347,7 @@ export function Field({ rounds, event, mood, deadline }: { rounds: Round[]; even
 
   return (
     <div ref={field} className={`hm-field hm-field--${mood}${hurry ? ' hm-field--hurry' : ''}`} aria-hidden="true">
+      <Scenery />
       {COWS.map((cow, i) => (
         <div
           key={i}
@@ -401,5 +402,81 @@ export function Field({ rounds, event, mood, deadline }: { rounds: Round[]; even
         )
       })}
     </div>
+  )
+}
+
+/**
+ * The top of the field, after the big-screen game's art: blue sky with drifting clouds
+ * over two hills meeting in a valley, fading into the meadow the cows graze on.
+ */
+function Scenery() {
+  return (
+    <svg className="hm-scenery" viewBox="0 0 300 220" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="hm-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3aa6f4" />
+          <stop offset="0.55" stopColor="#6fc3f8" />
+          <stop offset="1" stopColor="#bdeafc" />
+        </linearGradient>
+        <linearGradient id="hm-hill-back" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#b6dd45" />
+          <stop offset="1" stopColor="#9acf3e" />
+        </linearGradient>
+        <linearGradient id="hm-hill-front" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#6fb233" />
+          <stop offset="1" stopColor="#82c23b" />
+        </linearGradient>
+        <linearGradient id="hm-meet" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#96cf47" stopOpacity="0" />
+          <stop offset="1" stopColor="#96cf47" />
+        </linearGradient>
+        <path id="hm-tuft" transform="scale(0.42)" d="M0 0c-2-8-7-13-13-16 7 1 12 6 13 11 0-9 3-17 8-21-2 8-3 15-2 23 3-6 8-10 13-11-5 3-9 8-10 14z" />
+      </defs>
+
+      <rect width="300" height="220" fill="url(#hm-sky)" />
+
+      <g className="hm-scenery__cloud hm-scenery__cloud--big">
+        <ellipse cx="226" cy="34" rx="48" ry="11" fill="#aee8ee" />
+        <g fill="#fff">
+          <circle cx="194" cy="24" r="13" />
+          <circle cx="214" cy="14" r="19" />
+          <circle cx="239" cy="16" r="17" />
+          <circle cx="260" cy="25" r="13" />
+          <ellipse cx="227" cy="29" rx="45" ry="10" />
+        </g>
+      </g>
+      <g className="hm-scenery__cloud hm-scenery__cloud--small">
+        <ellipse cx="166" cy="128" rx="20" ry="5" fill="#aee8ee" />
+        <g fill="#fff">
+          <circle cx="155" cy="122" r="7" />
+          <circle cx="166" cy="117" r="9.5" />
+          <circle cx="178" cy="122" r="6.5" />
+          <ellipse cx="167" cy="125" rx="19" ry="5" />
+        </g>
+      </g>
+
+      {/* The far hill on the right, rising out of the valley... */}
+      <path d="M96 220 C128 160 168 128 214 122 C250 118 290 132 330 150 L330 220 Z" fill="url(#hm-hill-back)" />
+      <g fill="#c8e65a" opacity="0.8">
+        <use href="#hm-tuft" x="186" y="140" />
+        <use href="#hm-tuft" x="212" y="132" />
+        <use href="#hm-tuft" x="238" y="146" />
+        <use href="#hm-tuft" x="168" y="164" />
+        <use href="#hm-tuft" x="222" y="170" />
+      </g>
+      {/* ...and the nearer one on the left, running down into it. */}
+      <path d="M-30 140 C30 110 70 100 104 108 C134 116 160 150 182 220 L-30 220 Z" fill="url(#hm-hill-front)" />
+      <g fill="#8ccd42" opacity="0.85">
+        <use href="#hm-tuft" x="80" y="120" />
+        <use href="#hm-tuft" x="108" y="128" />
+        <use href="#hm-tuft" x="128" y="146" />
+        <use href="#hm-tuft" x="70" y="150" />
+        <use href="#hm-tuft" x="104" y="168" />
+        <use href="#hm-tuft" x="140" y="186" />
+      </g>
+
+      {/* Into the meadow. */}
+      <rect y="150" width="300" height="70" fill="url(#hm-meet)" />
+    </svg>
   )
 }
