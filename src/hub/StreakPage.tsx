@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { closerHistory, type CloserHistory } from '../games/closer/summary'
 import { herdHistory } from '../games/herd/summary'
+import { mentalityHistory } from '../games/mentality/summary'
 import { todayKey } from '../games/pizza/game/daily'
 import { pizzaHistory } from '../games/pizza/summary'
 import { Link } from '../Link'
@@ -62,6 +63,30 @@ function pizzaView(now: Date): View {
       { label: 'Total points', value: h.totalPoints.toLocaleString('en-GB') },
       { label: 'Best game', value: h.played ? `${h.bestScore} pts` : '–' },
       { label: 'Best streak', value: plural(h.bestStreak, 'day') },
+    ],
+    first: h.days[0]?.day ?? today,
+    today,
+    days,
+  }
+}
+
+function mentalityView(now: Date): View {
+  const h = mentalityHistory(now)
+  const today = todayKey(now)
+  const days = new Map<string, DayCell>()
+  for (const d of h.days) {
+    const search = d.day === today ? '' : `day=${d.day}`
+    if (d.status === 'done') days.set(d.day, { status: d.onTime ? 'done' : 'late', detail: `${d.score}`, search })
+    else if (d.status === 'playing') days.set(d.day, { status: 'started', search })
+    else days.set(d.day, { status: d.day === today ? 'today' : 'missed', search })
+  }
+  return {
+    name: 'Herd Mentality',
+    tiles: [
+      { label: 'Day streak', value: `🔥 ${h.streak}` },
+      { label: 'Cows gathered', value: `🐄 ${h.cows}` },
+      { label: 'Pink cows', value: `🩷 ${h.pinkCows}` },
+      { label: 'Best game', value: h.bestScore === null ? '–' : `${h.bestScore} pts` },
     ],
     first: h.days[0]?.day ?? today,
     today,
@@ -137,7 +162,7 @@ export function StreakPage() {
         <h1 className="hub__page-title">Streak</h1>
       </header>
 
-      <GameTabs id="streak" panes={{ pizza: <GameStats game="pizza" />, closer: <GameStats game="closer" />, herd: <GameStats game="herd" /> }} />
+      <GameTabs id="streak" panes={{ pizza: <GameStats game="pizza" />, closer: <GameStats game="closer" />, 'herd-mentality': <GameStats game="herd-mentality" />, herd: <GameStats game="herd" /> }} />
     </div>
   )
 }
@@ -145,7 +170,7 @@ export function StreakPage() {
 /** One game's streak, quick stats and a calendar of every day since it launched. */
 function GameStats({ game }: { game: GameId }) {
   const [now] = useState(() => new Date())
-  const [view, setView] = useState<View | null | 'error'>(() => (game === 'pizza' ? pizzaView(now) : game === 'herd' ? herdView(now) : null))
+  const [view, setView] = useState<View | null | 'error'>(() => (game === 'pizza' ? pizzaView(now) : game === 'herd' ? herdView(now) : game === 'herd-mentality' ? mentalityView(now) : null))
 
   useEffect(() => {
     if (game !== 'closer') return

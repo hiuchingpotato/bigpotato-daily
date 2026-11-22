@@ -55,14 +55,14 @@ export function isRevealed(day: string, now = new Date()): boolean {
 
 // ─── Randomness ─────────────────────────────────────────────────────────
 
-function hash(s: string): number {
+export function hash(s: string): number {
   let h = 2166136261
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
   return h >>> 0
 }
 
 /** mulberry32: small, fast, and the same on every device. */
-function rng(seed: number): () => number {
+export function rng(seed: number): () => number {
   let a = seed >>> 0
   return () => {
     a = (a + 0x6d2b79f5) >>> 0

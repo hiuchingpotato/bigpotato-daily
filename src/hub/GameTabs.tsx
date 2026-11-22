@@ -3,7 +3,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 const ALL_GAMES = [
   { id: 'pizza', name: 'P for Pizza' },
   { id: 'closer', name: 'Closer' },
-  { id: 'herd', name: 'Herd' },
+  { id: 'herd-mentality', name: 'Herd' },
+  { id: 'herd', name: 'vs World' },
 ] as const
 
 export type GameId = (typeof ALL_GAMES)[number]['id']

@@ -3,9 +3,11 @@ import { formatDuration } from '../games/closer/game/stats'
 import { closerSummary, type CloserDay, type CloserSummary } from '../games/closer/summary'
 import { todayKey } from '../games/pizza/game/daily'
 import { herdPastDays, herdToday, OUTCOME_LABEL, type HerdDay } from '../games/herd/summary'
+import { mentalityPastDays, mentalityToday, type MentalityDay } from '../games/mentality/summary'
 import { pizzaPastDays, pizzaToday } from '../games/pizza/summary'
 import { Link } from '../Link'
 import type { Route } from '../router'
+import type { GameId } from './GameTabs'
 import { HubLogo } from './HubLogo'
 import './hub.css'
 
@@ -57,6 +59,8 @@ export function Hub() {
   const closerOk = closer && closer !== 'error' ? closer : null
   const herd = herdToday(now)
   const herdPast = herdPastDays(PAST_DAYS, now)
+  const mentality = mentalityToday(now)
+  const mentalityPast = mentalityPastDays(PAST_DAYS, now)
 
   return (
     <div className="hub">
@@ -135,6 +139,35 @@ export function Hub() {
           <MoreCard game="closer" />
         </GameRow>
 
+        <GameRow label="Herd Mentality">
+          <TodayCard
+            route="herd-mentality"
+            art="herd-mentality/field-card.svg"
+            mascot="herd/cow-2.png"
+            name="Herd Mentality"
+            kicker="Think like the herd"
+            difficulty={2}
+            blurb="Six questions, 45 seconds each. Say what everyone else will say."
+            number={mentality.puzzle}
+            date={shortDate(now)}
+            streak={mentality.streak}
+            result={mentalityResult(mentality)}
+            action={mentality.status === 'done' ? next : PLAY}
+          />
+          {mentalityPast.map((m) => (
+            <PastCard
+              key={m.day}
+              route="herd-mentality"
+              search={`day=${m.day}`}
+              date={shortDate(dayDate(m.day))}
+              number={m.puzzle}
+              status={mentalityResult(m) ?? 'Not played'}
+              done={m.status === 'done'}
+            />
+          ))}
+          <MoreCard game="herd-mentality" />
+        </GameRow>
+
         <GameRow label="Herd vs The world">
           <TodayCard
             route="herd"
@@ -171,6 +204,12 @@ export function Hub() {
       </main>
     </div>
   )
+}
+
+function mentalityResult(m: MentalityDay): string | null {
+  if (m.status === 'playing') return 'In progress'
+  if (m.status !== 'done') return null
+  return `${m.score} pts · 🐄 ${m.herds}${m.pinks ? ` · 🩷 ${m.pinks}` : ''}`
 }
 
 function herdResult(h: HerdDay): string {
@@ -286,7 +325,7 @@ function PastCard({ route, search, date, number, status, done }: PastCardProps) 
 }
 
 /** The last card in a row: opens that game's streak & calendar screen. */
-function MoreCard({ game }: { game: 'pizza' | 'closer' | 'herd' }) {
+function MoreCard({ game }: { game: GameId }) {
   return (
     <Link to="stats" search={`game=${game}`} className="card card--past card--more">
       <span className="card__more-plus" aria-hidden="true">

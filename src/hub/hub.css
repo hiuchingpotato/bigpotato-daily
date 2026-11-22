@@ -478,8 +478,25 @@ body:has(.hub) {
     background: #e2399a;
   }
 
+  .card--herd-mentality .card__play {
+    background: #2f9a45;
+  }
+
+  /* A short, wide cow rather than a tall sausage: sit it higher. */
+  .card--herd-mentality .card__mascot {
+    right: 100%;
+    bottom: -14px;
+    width: 84px;
+
+    @media (max-width: 359px) {
+      right: calc(100% - 24px);
+      width: 70px;
+    }
+  }
+
   /* The longest game name, at the same size as the others: stars and number drop under it when the row is too narrow. */
-  .card--herd .card__head {
+  .card--herd .card__head,
+  .card--herd-mentality .card__head {
     flex-wrap: wrap;
     row-gap: 2px;
   }
