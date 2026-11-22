@@ -57,14 +57,12 @@ body:has(.game-herd-mentality) {
     pointer-events: none;
   }
 
+  /* Every cow: placed by Field.tsx each frame (feet at left/top), sized by distance. */
   .hm-cow {
     position: absolute;
     width: calc(var(--cow) * var(--s, 1));
     translate: -50% -100%;
-    transition:
-      left 1.5s ease-in-out,
-      top 1.5s ease-in-out,
-      width 1.5s ease-in-out;
+    will-change: left, top, width;
 
     img {
       display: block;
@@ -80,41 +78,78 @@ body:has(.game-herd-mentality) {
   }
 
   .hm-cow__body {
+    animation: hm-breathe 3.2s ease-in-out infinite var(--d, 0s);
     transition: transform 0.6s ease, filter 0.6s ease;
   }
 
-  /* Minding their own business. */
-  .hm-field--idle {
-    .hm-cow--breathe .hm-cow__body,
-    .hm-cow--herd .hm-cow__body {
-      animation: hm-breathe 3.2s ease-in-out infinite var(--d, 0s);
-    }
+  /* Facing: the art looks left; walking right flips it. */
+  .hm-cow__flip {
+    position: relative;
+    transition: transform 0.25s ease;
+  }
 
-    .hm-cow--walk .hm-cow__move {
-      animation: hm-amble 14s ease-in-out infinite var(--d, 0s);
-    }
+  .hm-cow.is-flipped .hm-cow__flip {
+    transform: scaleX(-1);
+  }
 
-    .hm-cow--walk .hm-cow__body {
-      animation: hm-waddle 0.9s ease-in-out infinite;
-    }
+  /* Walking: a bobbing, rolling gait. Trotting over to the herd is quicker. */
+  .hm-cow.is-walking .hm-cow__body {
+    animation: hm-walk 0.7s ease-in-out infinite var(--d, 0s);
+  }
 
-    /* Lying down with its eyes shut, more or less. */
-    .hm-cow--sleep .hm-cow__body {
-      transform: scaleY(0.86) rotate(-3deg);
-      filter: saturate(0.6) brightness(0.96);
+  .hm-cow.is-trotting .hm-cow__body {
+    animation-duration: 0.36s;
+  }
+
+  /* Blinking: an eyelid drops over each eye every few seconds. */
+  .hm-cow__lid {
+    position: absolute;
+    border-radius: 50% / 45%;
+    background: #fff;
+    transform: scaleY(0);
+    transform-origin: 50% 0;
+    animation: hm-blink var(--blink, 5s) linear infinite var(--blink-delay, 0s);
+
+    /* The closed eye's lash line. */
+    &::after {
+      content: '';
+      position: absolute;
+      left: 4%;
+      right: 4%;
+      bottom: 18%;
+      height: 14%;
+      border-bottom: 2px solid var(--hm-ink);
+      border-radius: 0 0 50% 50%;
+    }
+  }
+
+  /* Napping: lying low, eyes shut, z's drifting up. */
+  .hm-cow.is-asleep {
+    .hm-cow__body {
       animation: hm-snooze 4s ease-in-out infinite var(--d, 0s);
+      filter: saturate(0.7);
+    }
+
+    .hm-cow__lid {
+      animation: none;
+      transform: scaleY(1);
+    }
+
+    .hm-cow__zzz {
+      opacity: 1;
     }
   }
 
   .hm-cow__zzz {
     position: absolute;
-    left: 70%;
-    top: 0;
+    left: 66%;
+    top: 4%;
     font-family: var(--font-head);
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: calc(1.1rem * var(--s, 1));
     color: #fff;
     text-shadow: 0 1px 0 rgb(0 0 0 / 35%);
+    opacity: 0;
     transition: opacity 0.4s;
 
     i {
@@ -135,54 +170,45 @@ body:has(.game-herd-mentality) {
     }
   }
 
-  /* A question is up: everyone's awake, staring, and leaning in as time runs out. */
-  .hm-field--alert {
-    .hm-cow__zzz {
-      opacity: 0;
-    }
-
-    .hm-cow__body {
-      transform: scale(1.08);
-      transition: transform 30s linear;
-      animation: hm-stare 2.4s ease-in-out infinite var(--d, 0s);
-    }
+  /* A question is up: stopped, staring at you, and leaning in as time runs out. */
+  .hm-cow.is-staring .hm-cow__body {
+    transform: scale(1.1);
+    transition: transform 30s linear;
+    animation: hm-stare 2.4s ease-in-out infinite var(--d, 0s);
   }
 
-  .hm-field--hurry .hm-cow__move {
+  .hm-field--hurry .hm-cow.is-staring .hm-cow__move {
     animation: hm-fidget 0.5s ease-in-out infinite var(--d, 0s);
   }
 
-  /* Joined your herd: walks over with a "!" over its head. */
-  .hm-cow--herd {
-    z-index: 60;
-  }
-
-  .hm-cow.is-new .hm-cow__body {
-    animation: hm-waddle 0.45s ease-in-out 3;
-  }
-
+  /* Arrived in your herd: a "!" pops up over its head. */
   .hm-cow__bang {
     position: absolute;
     left: 50%;
-    top: -6px;
+    top: 0;
     translate: -50% -100%;
     display: grid;
     place-items: center;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border: 3px solid var(--hm-ink);
     border-radius: 50%;
     background: #fadf45;
     font-family: var(--font-head);
     font-weight: 700;
     font-size: 1.4rem;
-    animation: hm-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 1.3s both;
+    opacity: 0;
+    transform: scale(0.4);
+    pointer-events: none;
+  }
+
+  .hm-cow.is-arrived .hm-cow__bang {
+    animation: hm-bang 2.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
   }
 
   /* The pink cow charges in from the left... */
   .hm-cow--pink.is-rushing {
     animation: hm-rush 0.9s cubic-bezier(0.5, 0, 0.3, 1) both;
-    transition: none;
 
     .hm-cow__body {
       animation: hm-gallop 0.18s linear 5;
@@ -200,9 +226,9 @@ body:has(.game-herd-mentality) {
     animation: hm-dust 1.1s ease-out 0.3s both;
   }
 
-  /* ...and sends the cow in its way spinning. */
+  /* ...and sends the cow in its way spinning, seeing stars. */
   .hm-cow.is-dizzy .hm-cow__move {
-    animation: hm-spin 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) 0.45s both;
+    animation: hm-spin 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) both;
   }
 
   .hm-cow__stars {
@@ -211,7 +237,13 @@ body:has(.game-herd-mentality) {
     top: 0;
     font-size: 1.5rem;
     translate: -50% -60%;
-    animation: hm-dizzy 1.2s linear 1.6s infinite both;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hm-cow.is-dizzy .hm-cow__stars {
+    opacity: 1;
+    animation: hm-dizzy 1.2s linear 1.2s infinite both;
   }
 
   /* ─── Over the field ────────────────────────────────── */
@@ -751,6 +783,49 @@ body:has(.game-herd-mentality) {
   }
   50% {
     transform: scaleY(0.83) scaleX(1.02) rotate(-3deg);
+  }
+}
+
+@keyframes hm-walk {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  25% {
+    transform: translateY(-4%) rotate(0deg);
+  }
+  50% {
+    transform: translateY(0) rotate(2deg);
+  }
+  75% {
+    transform: translateY(-4%) rotate(0deg);
+  }
+}
+
+@keyframes hm-blink {
+  0%,
+  94%,
+  100% {
+    transform: scaleY(0);
+  }
+  96.5% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes hm-bang {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  14%,
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) translateY(-8px);
   }
 }
 
