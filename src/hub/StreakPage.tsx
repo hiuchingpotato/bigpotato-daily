@@ -81,7 +81,7 @@ function herdView(now: Date): View {
     days.set(d.day, { status, detail, search })
   }
   return {
-    name: 'Herd Mentality',
+    name: 'Herd vs The world',
     tiles: [
       { label: 'Day streak', value: `🔥 ${h.streak}` },
       // Herd has no points: the running total is how often you matched the herd.

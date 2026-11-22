@@ -135,15 +135,15 @@ export function Hub() {
           <MoreCard game="closer" />
         </GameRow>
 
-        <GameRow label="Herd Mentality">
+        <GameRow label="Herd vs The world">
           <TodayCard
             route="herd"
             art="herd/cow-print-card.svg"
             mascot="herd/pink-cow.png"
-            name="Herd Mentality"
-            kicker="Think like the herd"
+            name="Herd vs The world"
+            kicker="One question a day"
             difficulty={0}
-            blurb="One question a day: say what most people will say. Results at 11pm."
+            blurb="Answer it once. At 11pm, find out where you stand."
             number={herd.puzzle}
             date={shortDate(now)}
             streak={herd.streak}

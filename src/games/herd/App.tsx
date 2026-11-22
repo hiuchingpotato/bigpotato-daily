@@ -54,7 +54,7 @@ export default function App() {
           ‹
         </Link>
         <div className="herd__brand">
-          Herd Mentality <span className="herd__num">#{puzzleNumber(day)}</span>
+          Herd vs The world <span className="herd__num">#{puzzleNumber(day)}</span>
         </div>
         <span className="herd__count" title="Players who have answered today's prompt">
           <img src={`${BASE}cow-head.png`} alt="" className="herd__count-cow" />

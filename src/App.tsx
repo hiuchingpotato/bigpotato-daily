@@ -14,7 +14,7 @@ const TITLES: Record<Route, string> = {
   home: 'Big Potato Daily',
   pizza: 'P for Pizza Daily',
   closer: 'Closer',
-  herd: 'Herd Mentality',
+  herd: 'Herd vs The world',
   leaderboard: 'Leaderboard · Big Potato Daily',
   stats: 'Streak · Big Potato Daily',
 }
