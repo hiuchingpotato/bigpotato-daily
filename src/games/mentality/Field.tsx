@@ -38,6 +38,23 @@ const COWS: { art: string; x: number; y: number; asleep?: boolean }[] = [
   { art: 'cow-6', x: 0.5, y: 0.98, asleep: true },
 ]
 
+/**
+ * On the start screen the herd grazes together on the left hill (the camera's up on
+ * the sky, so only the hilltops are in view). Same units as COWS: fractions of the
+ * screen in the grass view, so these sit high, on the hill.
+ */
+const INTRO: [number, number][] = [
+  [0.1, 0.5],
+  [0.25, 0.47],
+  [0.39, 0.51],
+  [0.17, 0.56],
+  [0.32, 0.58],
+  [0.45, 0.6],
+  [0.08, 0.61],
+  [0.22, 0.62],
+  [0.38, 0.63],
+]
+
 /** Where the herd gathers, as a fraction down the field. */
 const HERD_Y = 0.68
 /** Herd cows stand bigger than anything else on the field: they're the focal point. */
@@ -91,6 +108,8 @@ interface Cow {
   flip: boolean
   /** For a cow walking over to the herd: where it set off from and how big it was. */
   from?: { x: number; y: number; s: number }
+  /** Trotting rather than ambling: coming down off the hill when the game starts. */
+  fast?: boolean
 }
 
 /**
@@ -111,9 +130,12 @@ class Herd {
   /** The taller canvas the cows stand on, which the camera pans over. */
   world: HTMLElement
 
-  constructor(field: HTMLElement, world: HTMLElement, els: HTMLElement[], herdSlots: number[]) {
+  view: 'wide' | 'close'
+
+  constructor(field: HTMLElement, world: HTMLElement, els: HTMLElement[], herdSlots: number[], view: 'wide' | 'close') {
     this.field = field
     this.world = world
+    this.view = view
     const now = performance.now()
     this.cows = COWS.map((c, i) => ({
       el: els[i]!,
@@ -126,6 +148,13 @@ class Herd {
       ty: c.y,
       flip: Math.random() < 0.5,
     }))
+    // The start screen: everyone grazing on the left hill.
+    if (view === 'wide') {
+      this.cows.forEach((c, i) => {
+        const [x, y] = INTRO[i % INTRO.length]!
+        Object.assign(c, { x, y, tx: x, ty: y, s: depth(y) })
+      })
+    }
     // Anyone already in the herd (a reload, or the results) is simply there.
     herdSlots.forEach((slot) => {
       const cow = this.nearestFree(0.5, HERD_Y)
@@ -165,12 +194,32 @@ class Herd {
     return this.free().sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]
   }
 
+  /** Down from the sky to the grass: the herd wanders off the hill into the meadow. */
+  setView(view: 'wide' | 'close') {
+    if (view === this.view) return
+    this.view = view
+    const now = performance.now()
+    if (view === 'close') {
+      // Everyone trots down off the hill to their own spot in the meadow.
+      this.free().forEach((c) => {
+        const home = COWS[this.cows.indexOf(c)]!
+        const tx = Math.min(0.88, Math.max(0.12, home.x + rand(-0.05, 0.05)))
+        const ty = Math.max(0.51, home.y + rand(-0.03, 0.03))
+        Object.assign(c, { state: 'walk', tx, ty, fast: true, flip: tx > c.x })
+        this.draw(c)
+      })
+    } else {
+      for (const c of this.free()) if (c.state === 'stand' || c.state === 'walk') Object.assign(c, { state: 'stand', until: now + rand(0, 1200) })
+    }
+  }
+
   setMood(mood: 'idle' | 'alert') {
     this.mood = mood
     const now = performance.now()
     for (const c of this.free()) {
       if (mood === 'alert') {
-        // Wide awake, stop where you are, and look at the player.
+        // Wide awake, stop where you are, and look at the player (once down off the hill).
+        if (c.state === 'walk' && c.fast) continue
         Object.assign(c, { state: 'stare', flip: false })
       } else if (c.state === 'stare') {
         // Back to business, not all at once.
@@ -211,8 +260,10 @@ class Herd {
     const herdUp = this.cows.some((o) => o.state === 'herd' || o.state === 'join')
     let best: [number, number] = [c.x, c.y]
     for (let i = 0; i < 12; i++) {
-      const x = Math.min(0.88, Math.max(0.12, c.x + rand(-0.32, 0.32)))
-      const y = Math.min(0.98, Math.max(0.51, c.y + rand(-0.16, 0.16)))
+      // On the start screen they keep to the left hill; after that, the whole meadow.
+      const [x0, x1, y0, y1] = this.view === 'wide' ? [0.06, 0.46, 0.46, 0.63] : [0.12, 0.88, 0.51, 0.98]
+      const x = Math.min(x1, Math.max(x0, c.x + rand(-0.32, 0.32)))
+      const y = Math.min(y1, Math.max(y0, c.y + rand(-0.16, 0.16)))
       best = [x, y]
       if (!herdUp || Math.abs(x - 0.5) > 0.3 || Math.abs(y - HERD_Y) > 0.14) break
     }
@@ -243,7 +294,7 @@ class Herd {
         const dy = (c.ty - c.y) * h
         const dist = Math.hypot(dx, dy)
         // Closer cows look like they cover more ground; joiners trot.
-        const speed = c.state === 'join' ? 95 : 26 * c.s
+        const speed = c.state === 'join' ? 95 : c.fast ? 170 : 26 * c.s
         const move = this.still ? dist : speed * dt
         if (dist <= move) {
           c.x = c.tx
@@ -251,8 +302,11 @@ class Herd {
           if (c.state === 'join') {
             Object.assign(c, { state: 'herd', s: HERD_SCALE, flip: false })
             c.el.classList.add('is-arrived')
+          } else if (this.mood === 'alert') {
+            // Arrived mid-question: stop and stare like everyone else.
+            Object.assign(c, { state: 'stare', fast: false, flip: false })
           } else {
-            Object.assign(c, { state: 'stand', until: now + rand(1500, 6500) })
+            Object.assign(c, { state: 'stand', fast: false, until: now + rand(1500, 6500) })
           }
         } else {
           c.x += (dx / dist) * (move / w)
@@ -332,10 +386,11 @@ export function Field({
     COWS.map(() => ({ '--blink': `${rand(3.2, 7.5).toFixed(2)}s`, '--blink-delay': `${-rand(0, 6).toFixed(2)}s`, '--d': `${-rand(0, 3).toFixed(2)}s` }) as CSSProperties),
   )
 
+  const initialView = useRef(view)
   // Only on mount: the herd so far is placed straight away, later joiners walk in.
   const initial = useRef(herdSlots.filter((h) => h.round !== event?.round).map((h) => h.slot))
   useEffect(() => {
-    const h = new Herd(field.current!, world.current!, els.current, initial.current)
+    const h = new Herd(field.current!, world.current!, els.current, initial.current, initialView.current)
     herd.current = h
     h.start()
     return () => h.stop()
@@ -344,6 +399,10 @@ export function Field({
   useEffect(() => {
     herd.current?.setMood(mood)
   }, [mood])
+
+  useEffect(() => {
+    herd.current?.setView(view)
+  }, [view])
 
   useEffect(() => {
     if (!event) return
@@ -467,6 +526,18 @@ function Scenery() {
         <use href="#hm-clump" x="226" y="176" />
         <use href="#hm-clump" x="160" y="190" />
       </g>
+      {/*
+        On the start screen, the pink cow stands alone on top of the other hill, glaring
+        at the herd: stamping, huffing, and snorting puffs of air.
+      */}
+      <g className="hm-hilltop">
+        <g className="hm-hilltop__cow">
+          <image href={`${ART}pink-cow.png`} x="184" y="118" width="31" height="23.8" />
+        </g>
+        <circle className="hm-hilltop__puff hm-hilltop__puff--1" cx="190" cy="134" r="3.6" />
+        <circle className="hm-hilltop__puff hm-hilltop__puff--2" cx="195" cy="135" r="3" />
+      </g>
+
       {/* ...behind a big, darker, rounded hill on the left running down into the valley. */}
       <path d="M-30 150 C10 126 52 112 98 112 C140 112 170 144 192 220 L-30 220 Z" fill="url(#hm-hill-front)" />
       <g fill="#9bd84a" opacity="0.9">
@@ -553,7 +624,7 @@ function Sky() {
         <Cloud puffs={SMALL} x={206} y={168} scale={1.1} className="hm-cloud--slow" />
         <Cloud puffs={BIG} x={140} y={232} scale={0.95} />
         <Cloud puffs={SMALL} x={44} y={292} scale={0.9} className="hm-cloud--slow" />
-        <Cloud puffs={MEDIUM} x={222} y={318} scale={0.75} />
+        <Cloud puffs={MEDIUM} x={84} y={290} scale={0.75} />
       </svg>
     </div>
   )

@@ -103,6 +103,35 @@ body:has(.game-herd-mentality) {
     animation-direction: alternate-reverse;
   }
 
+  /* The pink cow on the far hilltop, start screen only: cross, stamping and snorting. */
+  .hm-hilltop {
+    transition: opacity 0.6s ease;
+  }
+
+  .hm-field--close .hm-hilltop {
+    opacity: 0;
+  }
+
+  .hm-hilltop__cow {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: hm-huff 2.6s ease-in-out infinite;
+  }
+
+  .hm-hilltop__puff {
+    fill: #fff;
+    stroke: #c9d6de;
+    stroke-width: 0.5;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hm-puff 2.6s ease-out infinite;
+  }
+
+  .hm-hilltop__puff--2 {
+    animation-delay: 0.12s;
+  }
+
   /* Every cow: placed by Field.tsx each frame (feet at left/top), sized by distance. */
   /* Sky, clouds and the two hills, across the top; the meadow carries on below. */
   .hm-scenery {
@@ -867,6 +896,54 @@ body:has(.game-herd-mentality) {
   }
   to {
     transform: translateX(12px);
+  }
+}
+
+/* Rear back, then a cross little stamp, twice, then a breather. */
+@keyframes hm-huff {
+  0%,
+  100% {
+    transform: none;
+  }
+  8% {
+    transform: scale(1.04, 0.96);
+  }
+  14% {
+    transform: scale(0.98, 1.04) translateY(-1px) rotate(-2deg);
+  }
+  20% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(-1.5px) rotate(2deg);
+  }
+  34% {
+    transform: none;
+  }
+  40% {
+    transform: translateY(-1.5px) rotate(-2deg);
+  }
+  44% {
+    transform: none;
+  }
+}
+
+/* A snort of air from the nostrils, puffing out and down towards the herd. */
+@keyframes hm-puff {
+  0%,
+  12% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.3);
+  }
+  16% {
+    opacity: 0.95;
+  }
+  45% {
+    opacity: 0;
+    transform: translate(-12px, 5px) scale(2.2);
+  }
+  100% {
+    opacity: 0;
   }
 }
 
