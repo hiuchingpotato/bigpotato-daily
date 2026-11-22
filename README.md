@@ -38,7 +38,7 @@ Without the data, the home page shows "Couldn’t load today’s puzzle" for Clo
 
 ## Herd Mentality
 
-- **Questions** come from the same answer lists as Herd vs The world (`src/games/herd/prompts.ts`), in their own fixed shuffle: six a day from launch (22 November 2026), never including that day's Herd vs The world question.
+- **Questions** come from the same answer lists as Herd vs The world (`src/games/herd/prompts.ts`), in their own fixed shuffle: six a day from launch (14 November 2026, the same day as Herd vs The world, so there are older games to go back to), never including that day's Herd vs The world question.
 - **Scoring** (`src/games/mentality/mentality.ts`). Krillion doesn't publish how it ranks answers (its FAQ mentions word-frequency data, LLM help and a manual pass), so this game uses its own: each answer's share of the crowd comes from the prompt's weights, with 4% kept back for "something else". A round scores your answer's share as points out of 100. Herd = the top answer or within 5 points of it (a cow joins you); pink cow = under 3%, or not on the list (0 points); anything else is "more or less"; nothing typed when time runs out scores 0. Answers match forgivingly, like Herd vs The world.
 - **Where you stand** is ranked against a simulated crowd of 1,000 players for the day (seeded, so every device sees the same curve), each answering in proportion to the shares.
 - **Saved** in localStorage `herd-mentality:days`, one answer per round as you go, so a reload carries on at the next question. All-time cows and pink cows on the results and streak pages add up every game.

@@ -22,7 +22,7 @@ import { PROMPTS, type Prompt } from '../herd/prompts'
  */
 
 /** Puzzle #1. */
-export const LAUNCH_DAY = '2026-11-22'
+export const LAUNCH_DAY = '2026-11-14'
 export const ROUNDS = 6
 export const SECONDS = 45
 /** Share of a crowd, in %, who'd say something that isn't on the list. */

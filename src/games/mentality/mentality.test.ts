@@ -132,6 +132,6 @@ describe('saving', () => {
 
     const rounds = roundsFor(day, s)
     expect(rounds[2]!.outcome).toBe('timeout')
-    expect(shareText(day, rounds, 100, 50)).toMatch(/^🐄 Herd Mentality #1\n.{6,}\n100 pts · beat 50% of the herd$/u)
+    expect(shareText(day, rounds, 100, 50)).toMatch(/^🐄 Herd Mentality #9\n.{6,}\n100 pts · beat 50% of the herd$/u)
   })
 })
