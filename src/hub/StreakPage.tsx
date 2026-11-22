@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { closerHistory, type CloserHistory } from '../games/closer/summary'
+import { CowHead } from '../games/herd/CowHead'
 import { herdHistory } from '../games/herd/summary'
 import { mentalityHistory } from '../games/mentality/summary'
 import { todayKey } from '../games/pizza/game/daily'
@@ -14,14 +15,14 @@ type Status = 'done' | 'late' | 'gaveup' | 'started' | 'missed' | 'today'
 interface DayCell {
   status: Status
   /** Small figure under the date: points or guesses. */
-  detail?: string
+  detail?: ReactNode
   /** Query that opens this day's puzzle; empty for today's. */
   search: string
 }
 
 interface Tile {
   label: string
-  value: string
+  value: ReactNode
 }
 
 interface View {
@@ -84,8 +85,22 @@ function mentalityView(now: Date): View {
     name: 'Herd Mentality',
     tiles: [
       { label: 'Day streak', value: `🔥 ${h.streak}` },
-      { label: 'Cows gathered', value: `🐄 ${h.cows}` },
-      { label: 'Pink cows', value: `🩷 ${h.pinkCows}` },
+      {
+        label: 'Cows gathered',
+        value: (
+          <>
+            <CowHead /> {h.cows}
+          </>
+        ),
+      },
+      {
+        label: 'Pink cows',
+        value: (
+          <>
+            <CowHead pink /> {h.pinkCows}
+          </>
+        ),
+      },
       { label: 'Best game', value: h.bestScore === null ? '–' : `${h.bestScore} pts` },
     ],
     first: h.days[0]?.day ?? today,
@@ -98,7 +113,7 @@ function herdView(now: Date): View {
   const h = herdHistory(now)
   const today = todayKey(now)
   const days = new Map<string, DayCell>()
-  const mark = { herd: '🐄', pink: '🩷', between: '•' } as const
+  const mark = { herd: <CowHead label="In the herd" />, pink: <CowHead pink label="Pink cow" />, between: '•' }
   for (const d of h.days) {
     const search = d.day === today ? '' : `day=${d.day}`
     const detail = d.outcome ? mark[d.outcome] : undefined
@@ -110,8 +125,22 @@ function herdView(now: Date): View {
     tiles: [
       { label: 'Day streak', value: `🔥 ${h.streak}` },
       // Herd has no points: the running total is how often you matched the herd.
-      { label: 'In the herd', value: plural(h.herds, 'time') },
-      { label: 'Pink cows', value: `${h.pinkCows}` },
+      {
+        label: 'In the herd',
+        value: (
+          <>
+            <CowHead /> {plural(h.herds, 'time')}
+          </>
+        ),
+      },
+      {
+        label: 'Pink cows',
+        value: (
+          <>
+            <CowHead pink /> {h.pinkCows}
+          </>
+        ),
+      },
       { label: 'Best streak', value: plural(h.bestStreak, 'day') },
     ],
     first: h.days[0]?.day ?? today,
@@ -282,7 +311,16 @@ function Calendar({ view, route }: { view: View; route: GameId }) {
           ))}
       </ul>
       <p className="cal__note">
-        {route === 'closer' ? 'Numbers are guesses. ' : route === 'herd' ? '🐄 in the herd, 🩷 pink cow. ' : 'Numbers are points. '}Tap any day to play it; only days played on the day count towards your streak.
+        {route === 'closer' ? (
+          'Numbers are guesses. '
+        ) : route === 'herd' ? (
+          <>
+            <CowHead /> in the herd, <CowHead pink /> pink cow.{' '}
+          </>
+        ) : (
+          'Numbers are points. '
+        )}
+        Tap any day to play it; only days played on the day count towards your streak.
       </p>
     </section>
   )
