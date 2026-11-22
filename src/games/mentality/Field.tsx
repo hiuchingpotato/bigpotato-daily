@@ -430,18 +430,13 @@ export function Field({
 }
 
 /**
- * The top of the field, after the big-screen game's art: blue sky with drifting clouds
- * over two hills meeting in a valley, fading into the meadow the cows graze on.
+ * The two hills meeting in a valley, after the big-screen game's art, fading into the
+ * meadow the cows graze on. The sky behind them is <Sky />.
  */
 function Scenery() {
   return (
     <svg className="hm-scenery" viewBox="0 0 300 220" preserveAspectRatio="xMidYMax slice">
       <defs>
-        <linearGradient id="hm-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#3aa6f4" />
-          <stop offset="0.55" stopColor="#6fc3f8" />
-          <stop offset="1" stopColor="#bdeafc" />
-        </linearGradient>
         <linearGradient id="hm-hill-back" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#b6dd45" />
           <stop offset="1" stopColor="#9acf3e" />
@@ -456,28 +451,6 @@ function Scenery() {
         </linearGradient>
         <path id="hm-tuft" transform="scale(0.42)" d="M0 0c-2-8-7-13-13-16 7 1 12 6 13 11 0-9 3-17 8-21-2 8-3 15-2 23 3-6 8-10 13-11-5 3-9 8-10 14z" />
       </defs>
-
-      <rect width="300" height="220" fill="url(#hm-sky)" />
-
-      <g className="hm-scenery__cloud hm-scenery__cloud--big">
-        <ellipse cx="226" cy="34" rx="48" ry="11" fill="#aee8ee" />
-        <g fill="#fff">
-          <circle cx="194" cy="24" r="13" />
-          <circle cx="214" cy="14" r="19" />
-          <circle cx="239" cy="16" r="17" />
-          <circle cx="260" cy="25" r="13" />
-          <ellipse cx="227" cy="29" rx="45" ry="10" />
-        </g>
-      </g>
-      <g className="hm-scenery__cloud hm-scenery__cloud--small">
-        <ellipse cx="166" cy="128" rx="20" ry="5" fill="#aee8ee" />
-        <g fill="#fff">
-          <circle cx="155" cy="122" r="7" />
-          <circle cx="166" cy="117" r="9.5" />
-          <circle cx="178" cy="122" r="6.5" />
-          <ellipse cx="167" cy="125" rx="19" ry="5" />
-        </g>
-      </g>
 
       {/* The far hill on the right, rising out of the valley... */}
       <path d="M96 220 C128 160 168 128 214 122 C250 118 290 132 330 150 L330 220 Z" fill="url(#hm-hill-back)" />
@@ -505,36 +478,77 @@ function Scenery() {
   )
 }
 
-/** The open sky above the hills, seen when the camera's up for the start screen. */
+/** A puffy cartoon cloud: white puffs over a pale teal underside, like the big-screen art. */
+function Cloud({ puffs, x, y, scale = 1, className = '' }: { puffs: [number, number, number][]; x: number; y: number; scale?: number; className?: string }) {
+  const xs = puffs.map(([cx, , r]) => [cx - r, cx + r])
+  const left = Math.min(...xs.map((p) => p[0]!))
+  const right = Math.max(...xs.map((p) => p[1]!))
+  const base = Math.max(...puffs.map(([, cy]) => cy))
+  return (
+    // Placed by the outer group; the inner one drifts (a CSS transform would replace the placement).
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <g className={`hm-cloud ${className}`}>
+      {/* The shaded underside, peeking out below and to the right. */}
+      <g fill="#a8e3ee">
+        {puffs.map(([cx, cy, r], i) => (
+          <circle key={i} cx={cx + 3} cy={cy + 5} r={r} />
+        ))}
+        <rect x={left + 3} y={base - 2} width={right - left} height={10} rx={5} />
+      </g>
+      <g fill="#fff">
+        {puffs.map(([cx, cy, r], i) => (
+          <circle key={i} cx={cx} cy={cy} r={r} />
+        ))}
+        <rect x={left} y={base - 4} width={right - left} height={8} rx={4} />
+      </g>
+      {/* A soft highlight on the top puffs. */}
+      <g fill="#fff" opacity="0.9">
+        {puffs.slice(0, 2).map(([cx, cy, r], i) => (
+          <circle key={i} cx={cx - r * 0.25} cy={cy - r * 0.3} r={r * 0.45} />
+        ))}
+      </g>
+      </g>
+    </g>
+  )
+}
+
+/** The big wide cloud from the art: a bumpy top and a long flat underside. */
+const BIG: [number, number, number][] = [
+  [0, 0, 22],
+  [30, -8, 26],
+  [-26, 8, 16],
+  [58, 4, 18],
+  [-48, 14, 11],
+  [80, 14, 12],
+]
+const MEDIUM: [number, number, number][] = [
+  [0, 0, 14],
+  [20, -4, 16],
+  [-16, 6, 10],
+  [38, 6, 10],
+]
+const SMALL: [number, number, number][] = [
+  [0, 0, 8],
+  [12, -3, 9],
+  [24, 3, 6],
+]
+
+/**
+ * The sky behind everything, after the big-screen art: a deep blue overhead that
+ * lightens to a pale, hazy blue at the horizon, with puffy clouds drifting across.
+ * It runs from the top of the camera's canvas down behind the hills.
+ */
 function Sky() {
   return (
-    <svg className="hm-sky" viewBox="0 0 300 200" preserveAspectRatio="xMidYMax slice">
-      <defs>
-        <linearGradient id="hm-sky-high" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#2393ea" />
-          <stop offset="1" stopColor="#3aa6f4" />
-        </linearGradient>
-      </defs>
-      <rect width="300" height="200" fill="url(#hm-sky-high)" />
-      <g className="hm-scenery__cloud">
-        <ellipse cx="96" cy="78" rx="44" ry="10" fill="#aee8ee" />
-        <g fill="#fff">
-          <circle cx="66" cy="68" r="12" />
-          <circle cx="86" cy="58" r="18" />
-          <circle cx="110" cy="60" r="16" />
-          <circle cx="130" cy="69" r="12" />
-          <ellipse cx="97" cy="73" rx="42" ry="9" />
-        </g>
-      </g>
-      <g className="hm-scenery__cloud hm-scenery__cloud--small">
-        <ellipse cx="214" cy="140" rx="30" ry="7" fill="#aee8ee" />
-        <g fill="#fff">
-          <circle cx="198" cy="133" r="9" />
-          <circle cx="214" cy="126" r="13" />
-          <circle cx="231" cy="133" r="9" />
-          <ellipse cx="215" cy="137" rx="28" ry="7" />
-        </g>
-      </g>
-    </svg>
+    <div className="hm-sky">
+      <svg viewBox="0 0 300 420" preserveAspectRatio="xMidYMax slice">
+        <Cloud puffs={BIG} x={214} y={46} className="hm-cloud--slow" />
+        <Cloud puffs={MEDIUM} x={66} y={112} scale={1.1} />
+        <Cloud puffs={SMALL} x={206} y={168} scale={1.1} className="hm-cloud--slow" />
+        <Cloud puffs={BIG} x={140} y={232} scale={0.95} />
+        <Cloud puffs={SMALL} x={44} y={292} scale={0.9} className="hm-cloud--slow" />
+        <Cloud puffs={MEDIUM} x={222} y={318} scale={0.75} />
+      </svg>
+    </div>
   )
 }
