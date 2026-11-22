@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from '../../Link'
 import { Field, type FieldEvent } from './Field'
+import type { Prompt } from '../herd/prompts'
+import { suggestion } from './match'
 import {
+  band,
+  BAND_LABEL,
   crowdScores,
   dayKey,
   histogram,
@@ -100,7 +104,7 @@ export default function App() {
       <main className="hm__main">
         {phase === 'intro' ? <Intro resumeAt={answers.length} onStart={start} /> : null}
         {phase === 'question' ? (
-          <Question key={current} n={current} question={questions[current]!.question} deadline={deadline} onDone={finish} />
+          <Question key={current} n={current} prompt={questions[current]!} deadline={deadline} onDone={finish} />
         ) : null}
         {phase === 'reveal' && rounds[current] ? <Reveal r={rounds[current]} last={answers.length >= ROUNDS} onNext={next} /> : null}
         {phase === 'results' ? <Results day={day} rounds={rounds} /> : null}
@@ -129,7 +133,7 @@ function Intro({ resumeAt, onStart }: { resumeAt: number; onStart: () => void })
 }
 
 /** One question against the clock. Whatever's typed when time runs out is the answer. */
-function Question({ n, question, deadline, onDone }: { n: number; question: string; deadline: number; onDone: (text: string | null) => void }) {
+function Question({ n, prompt, deadline, onDone }: { n: number; prompt: Prompt; deadline: number; onDone: (text: string | null) => void }) {
   const [value, setValue] = useState('')
   const [now, setNow] = useState(() => Date.now())
   const input = useRef<HTMLInputElement>(null)
@@ -159,6 +163,20 @@ function Question({ n, question, deadline, onDone }: { n: number; question: stri
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [deadline])
 
+  // A near-miss of an answer, offered back as you type.
+  const [hint, setHint] = useState<{ for: string; text: string | null }>({ for: '', text: null })
+  useEffect(() => {
+    // A beat after typing stops, so it doesn't flicker on every key.
+    const id = setTimeout(() => setHint({ for: value, text: suggestion(prompt, value) }), 250)
+    return () => clearTimeout(id)
+  }, [value, prompt])
+  const meant = hint.for === value ? hint.text : null
+  const accept = () => {
+    if (!meant) return
+    setValue(meant)
+    input.current?.focus()
+  }
+
   const left = Math.max(0, deadline - now)
   const secs = Math.ceil(left / 1000)
   const onSubmit = (e: FormEvent) => {
@@ -171,7 +189,7 @@ function Question({ n, question, deadline, onDone }: { n: number; question: stri
       <p className="hm-q__count">
         Question {n + 1} of {ROUNDS}
       </p>
-      <h1 className="hm-q__text">{question}</h1>
+      <h1 className="hm-q__text">{prompt.question}</h1>
       <div className="hm-q__timer" role="timer" aria-label={`${secs} seconds left`}>
         <span className="hm-q__bar" style={{ transform: `scaleX(${left / (SECONDS * 1000)})` }} />
         <b>{secs}</b>
@@ -192,11 +210,16 @@ function Question({ n, question, deadline, onDone }: { n: number; question: stri
           Moo!
         </button>
       </form>
+      <p className="hm-q__hint" aria-live="polite">
+        {meant ? (
+          <button type="button" className="hm-q__meant" onClick={accept} onMouseDown={(e) => e.preventDefault()}>
+            Do you mean <b>“{meant}”</b>?
+          </button>
+        ) : null}
+      </p>
     </section>
   )
 }
-
-const pct = (n: number) => `${n < 1 && n > 0 ? '<1' : Math.round(n)}%`
 
 function Reveal({ r, last, onNext }: { r: Round; last: boolean; onNext: () => void }) {
   const v = VERDICT[r.outcome]
@@ -209,15 +232,15 @@ function Reveal({ r, last, onNext }: { r: Round; last: boolean; onNext: () => vo
         <div>
           <dt>You said</dt>
           <dd>
-            {r.input ?? '—'}
-            {r.input ? <small>{r.match < 0 ? 'nobody else' : `${pct(r.share)} said this`}</small> : null}
+            {r.matched ?? r.input ?? '—'}
+            {r.input ? <small>{BAND_LABEL[band(r)]}</small> : null}
           </dd>
         </div>
         <div>
           <dt>The herd said</dt>
           <dd>
             {r.top.text}
-            <small>{pct(r.top.share)}</small>
+            <small>{BAND_LABEL.top}</small>
           </dd>
         </div>
       </dl>
@@ -235,7 +258,8 @@ function Results({ day, rounds }: { day: string; rounds: Round[] }) {
   const score = rounds.reduce((s, r) => s + r.points, 0)
   const crowd = useMemo(() => crowdScores(day), [day])
   const max = maxScore(rounds.map((r) => r.prompt))
-  const beat = percentile(score, crowd)
+  // Kept a little vague, like the bands: to the nearest 5%.
+  const beat = Math.floor(percentile(score, crowd) / 5) * 5
   const [history] = useState(() => mentalityHistory())
   const [msg, setMsg] = useState('')
 
@@ -253,7 +277,7 @@ function Results({ day, rounds }: { day: string; rounds: Round[] }) {
           <small> / {max}</small>
         </p>
         <p className="hm-score__beat">
-          You beat <b>{beat}%</b> of the herd
+          You beat about <b>{beat}%</b> of the herd
         </p>
         <Curve crowd={crowd} max={max} score={score} />
         <div className="hm-score__row">
@@ -276,8 +300,12 @@ function Results({ day, rounds }: { day: string; rounds: Round[] }) {
               <span className="hm-rounds__body">
                 <span className="hm-rounds__q">{r.prompt.question}</span>
                 <span className="hm-rounds__a">
-                  {r.input ?? 'No answer'}
-                  {r.outcome !== 'herd' ? <span className="hm-rounds__top"> · herd said {r.top.text}</span> : null}
+                  {r.matched ?? r.input ?? 'No answer'}
+                  <span className="hm-rounds__top">
+                    {' · '}
+                    {r.input ? BAND_LABEL[band(r)] : 'Out of time'}
+                    {r.match !== r.prompt.answers.findIndex((a) => a.text === r.top.text) ? `, herd said ${r.top.text}` : ''}
+                  </span>
                 </span>
               </span>
               <span className="hm-rounds__pts">{r.points}</span>

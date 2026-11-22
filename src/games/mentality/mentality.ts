@@ -1,20 +1,30 @@
-import { dayKey, hash, matchAnswer, promptForDay as vsWorldPrompt, rng } from '../herd/herd'
-import { PROMPTS, type Prompt } from '../herd/prompts'
+import { dayKey, hash, promptForDay as vsWorldPrompt, rng } from '../herd/herd'
+import type { Prompt } from '../herd/prompts'
+import { matchInput } from './match'
+import { QUESTIONS, type Question } from './questions'
 
 /**
  * Herd Mentality, daily: six questions, 45 seconds each, and the aim is to say what
  * most people would say. It's Krillion turned round: Krillion rewards the rarest
  * answer, this rewards the most common one.
  *
- * Scoring. Every question has a list of answers with how often a crowd gives each
- * (the same data as Herd vs The world). An answer's share is its slice of that crowd,
- * with a little held back for "something else". Each round scores your answer's share,
- * as points out of 100:
+ * Questions come from this game's own bank (questions.ts): about 70% that UK and US
+ * players share, 30% that anyone in the world can answer. Each day mixes four of the
+ * first with two of the second.
  *
- *   - Herd: the top answer, or within HERD_MARGIN points of it.    → a cow joins you
- *   - Pink cow: an answer under PINK_BELOW %, or one not on the list. → a pink cow joins
- *   - More or less: anything in between.                            → nobody notices
+ * Scoring. Every question has a list of answers with how often a crowd gives each.
+ * An answer's share is its slice of that crowd, with a little held back for "something
+ * else". Like Krillion, where you land is kept a little vague: you see a band (top
+ * answer, very popular, popular, niche, rare) rather than an exact %, and the herd is
+ * generous, so it isn't hard to land a cow.
+ *
+ *   - Herd: the top answer, or any answer at least half as popular.  → a cow joins you
+ *   - Pink cow: an answer under PINK_BELOW %, or one not on the list.  → a pink cow joins
+ *   - More or less: anything in between.                             → nobody notices
  *   - Out of time with nothing typed: no points.
+ *
+ * Points are how popular your answer is next to the top one, out of 100, so the top
+ * answer is always 100 and a perfect day is 600, whatever the questions.
  *
  * Your total is ranked against a simulated crowd playing the same six questions, which
  * gives the percentile curve on the results screen. Everything is seeded by the day, so
@@ -27,8 +37,10 @@ export const ROUNDS = 6
 export const SECONDS = 45
 /** Share of a crowd, in %, who'd say something that isn't on the list. */
 export const OTHER_SHARE = 4
-/** Within this many points of the top answer still counts as the herd (near ties). */
-export const HERD_MARGIN = 5
+/** At least this popular, next to the top answer, still counts as the herd. */
+export const HERD_RATIO = 0.5
+/** Daily mix: this many shared UK/US questions, the rest world. */
+export const SHARED_PER_DAY = 4
 /** Under this share, in %, an answer is too niche: pink cow. */
 export const PINK_BELOW = 3
 
@@ -61,26 +73,44 @@ export function requestedDay(search: string, today: string): string | null {
 
 // ─── Questions ──────────────────────────────────────────────────────────
 
-/** Its own fixed shuffle of the prompts, so days run through them all before repeating. */
-const ORDER: number[] = (() => {
-  const rand = rng(hash('herd-mentality-order'))
-  const order = PROMPTS.map((_, i) => i)
-  for (let i = order.length - 1; i > 0; i--) {
+function shuffled<T>(items: T[], seed: string): T[] {
+  const rand = rng(hash(seed))
+  const out = [...items]
+  for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1))
-    ;[order[i], order[j]] = [order[j]!, order[i]!]
-  }
-  return order
-})()
-
-/** The day's six questions, never including that day's Herd vs The world question. */
-export function questionsForDay(day: string): Prompt[] {
-  const skip = vsWorldPrompt(day).id
-  const out: Prompt[] = []
-  for (let i = (puzzleNumber(day) - 1) * ROUNDS; out.length < ROUNDS; i++) {
-    const p = PROMPTS[ORDER[((i % ORDER.length) + ORDER.length) % ORDER.length]!]!
-    if (p.id !== skip) out.push(p)
+    ;[out[i], out[j]] = [out[j]!, out[i]!]
   }
   return out
+}
+
+/** Each region's own fixed shuffle, so days run through them all before repeating. */
+const SHARED = shuffled(
+  QUESTIONS.filter((q) => q.region === 'shared'),
+  'herd-mentality:shared',
+)
+const WORLD = shuffled(
+  QUESTIONS.filter((q) => q.region === 'world'),
+  'herd-mentality:world',
+)
+
+const at = <T,>(list: T[], i: number) => list[((i % list.length) + list.length) % list.length]!
+
+/**
+ * The day's six questions: four shared UK/US and two world, in a mixed order, never
+ * the same question as that day's Herd vs The world.
+ */
+export function questionsForDay(day: string): Question[] {
+  const skip = vsWorldPrompt(day).question.toLowerCase()
+  const n = puzzleNumber(day) - 1
+  const pick = (list: Question[], count: number) => {
+    const out: Question[] = []
+    for (let i = n * count; out.length < count; i++) {
+      const q = at(list, i)
+      if (q.question.toLowerCase() !== skip) out.push(q)
+    }
+    return out
+  }
+  return shuffled([...pick(SHARED, SHARED_PER_DAY), ...pick(WORLD, ROUNDS - SHARED_PER_DAY)], `herd-mentality:day:${day}`)
 }
 
 // ─── Scoring ────────────────────────────────────────────────────────────
@@ -99,6 +129,8 @@ export interface Round {
   input: string | null
   /** Which answer it matched, or -1. */
   match: number
+  /** The answer it counted as, if any. */
+  matched: string | null
   /** Share of the crowd who said the same, in %. */
   share: number
   points: number
@@ -107,23 +139,48 @@ export interface Round {
   top: { text: string; share: number }
 }
 
+/** How popular an answer is, as players see it: kept a little vague on purpose. */
+export type Band = 'top' | 'very' | 'popular' | 'niche' | 'rare' | 'none'
+
+export const BAND_LABEL: Record<Band, string> = {
+  top: 'Top answer',
+  very: 'Very popular',
+  popular: 'Popular',
+  niche: 'Niche',
+  rare: 'Rare',
+  none: 'Nobody else',
+}
+
+export function band(r: Pick<Round, 'match' | 'share' | 'top'>): Band {
+  if (r.match < 0) return 'none'
+  if (r.share >= r.top.share) return 'top'
+  if (r.share >= r.top.share * HERD_RATIO) return 'very'
+  if (r.share >= 8) return 'popular'
+  if (r.share >= PINK_BELOW) return 'niche'
+  return 'rare'
+}
+
+/** Points for an answer with this share, when the top answer has `top`. */
+export const pointsFor = (share: number, top: number) => Math.round((100 * share) / top)
+
 export function scoreRound(prompt: Prompt, input: string | null): Round {
   const s = shares(prompt)
   const topShare = Math.max(...s)
   const topAt = s.indexOf(topShare)
   const top = { text: prompt.answers[topAt]!.text, share: topShare }
   const typed = input?.trim() || null
-  if (!typed) return { prompt, input: null, match: -1, share: 0, points: 0, outcome: 'timeout', top }
+  if (!typed) return { prompt, input: null, match: -1, matched: null, share: 0, points: 0, outcome: 'timeout', top }
 
-  const match = matchAnswer(prompt, typed)
+  const match = matchInput(prompt, typed).index
   const share = match < 0 ? 0 : s[match]!
-  const outcome: Outcome = match < 0 || share < PINK_BELOW ? 'pink' : share >= topShare - HERD_MARGIN ? 'herd' : 'meh'
-  return { prompt, input: typed, match, share, points: Math.round(share), outcome, top }
+  const outcome: Outcome = match < 0 || share < PINK_BELOW ? 'pink' : share >= topShare * HERD_RATIO ? 'herd' : 'meh'
+  const matched = match < 0 ? null : prompt.answers[match]!.text
+  return { prompt, input: typed, match, matched, share, points: pointsFor(share, topShare), outcome, top }
 }
 
-/** The most a perfect herd could score today: the top answer every round. */
+/** The most a perfect herd could score: the top answer every round. */
 export function maxScore(questions: Prompt[]): number {
-  return questions.reduce((sum, q) => sum + Math.round(Math.max(...shares(q))), 0)
+  return questions.length * 100
 }
 
 // ─── The crowd ──────────────────────────────────────────────────────────
@@ -144,10 +201,11 @@ export function crowdScores(day: string, questions = questionsForDay(day)): numb
     for (const s of all) {
       // About 1 in 25 answers is a time-out.
       if (rand() < 0.04) continue
+      const top = Math.max(...s)
       let pick = rand() * 100
       for (const share of s) {
         if (pick < share) {
-          total += Math.round(share)
+          total += pointsFor(share, top)
           break
         }
         pick -= share
@@ -233,5 +291,5 @@ export function roundsFor(day: string, saved: Saved): Round[] {
 export const OUTCOME_EMOJI: Record<Outcome, string> = { herd: '🐄', meh: '🌾', pink: '🩷', timeout: '⏰' }
 
 export function shareText(day: string, rounds: Round[], score: number, beat: number): string {
-  return `🐄 Herd Mentality #${puzzleNumber(day)}\n${rounds.map((r) => OUTCOME_EMOJI[r.outcome]).join('')}\n${score} pts · beat ${beat}% of the herd`
+  return `🐄 Herd Mentality #${puzzleNumber(day)}\n${rounds.map((r) => OUTCOME_EMOJI[r.outcome]).join('')}\n${score} pts · beat about ${beat}% of the herd`
 }

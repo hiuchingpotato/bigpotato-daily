@@ -503,6 +503,24 @@ body:has(.game-herd-mentality) {
     }
   }
 
+  /* "Do you mean …?" under the answer box. Always takes its space, so nothing jumps. */
+  .hm-q__hint {
+    min-height: 30px;
+    margin-top: 6px;
+  }
+
+  .hm-q__meant {
+    padding: 4px 12px;
+    border: 2px solid var(--hm-ink);
+    border-radius: 999px;
+    background: #fadf45;
+    color: var(--hm-ink);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    animation: hm-pop 0.2s ease-out both;
+  }
+
   /* ─── After each question ───────────────────────────── */
 
   .hm-reveal {

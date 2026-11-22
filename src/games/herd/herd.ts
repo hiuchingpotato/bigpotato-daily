@@ -106,7 +106,7 @@ export function normalise(input: string): string {
   return s
 }
 
-function editDistance(a: string, b: string): number {
+export function editDistance(a: string, b: string): number {
   if (Math.abs(a.length - b.length) > 2) return 3
   const prev = Array.from({ length: b.length + 1 }, (_, j) => j)
   for (let i = 1; i <= a.length; i++) {
